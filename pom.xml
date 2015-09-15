@@ -25,6 +25,14 @@
                     </archive>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.1</version>
+                <configuration>
+                    <mainClass>net.coderodde.ai.bayesiannetwork.App</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
-    </build>
+    </build> 
 </project>
