@@ -1,5 +1,5 @@
 # BayesianNetworkQuery
-A command line program for constructing Bayesian networds and doing queries on them.
+A command line program for constructing Bayesian networks and doing queries on them.
 
 For a small demonstration, run the JAR file and copy to the console
 
