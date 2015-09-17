@@ -36,6 +36,10 @@ public class ProbabilityMap<T> {
         return map.containsKey(node);
     }
     
+    public void remove(T object) {
+        map.remove(object);
+    }
+    
     private static void checkProbability(double probability) {
         if (Double.isNaN(probability)) {
             throw new IllegalArgumentException("The input probability is NaN.");

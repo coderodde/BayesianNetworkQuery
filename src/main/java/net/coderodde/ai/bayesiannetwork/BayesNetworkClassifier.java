@@ -47,27 +47,27 @@ public class BayesNetworkClassifier {
      * @return the classification result structure.
      */
     private ClassificationResult classify() {
-        Map<DirectedGraphNode, Boolean> map = new HashMap<>();
-        Set<DirectedGraphNode> set = new TreeSet<>();
+        Deque<DirectedGraphNode> tuple = new ArrayDeque<>();
+        Set<DirectedGraphNode> visited = new HashSet<>();
+        Set<DirectedGraphNode> set = getRootSet(network);
+        ClassificationResult result = new ClassificationResult();
 
-        for (DirectedGraphNode node : network) {
-            map.put(node, Boolean.FALSE);
-        }
+        classifyImpl(tuple, visited, set, result, 1.0f);
+
+        return result;
+
+    }
+    
+    private Set<DirectedGraphNode> getRootSet(List<DirectedGraphNode> network) {
+        Set<DirectedGraphNode> set = new TreeSet<>();
 
         for (DirectedGraphNode node : network) {
             if (node.isIndependent()) {
                 set.add(node);
             }
         }
-
-        ClassificationResult result = new ClassificationResult();
-        Deque<DirectedGraphNode> tuple = new ArrayDeque<>();
-        Set<DirectedGraphNode> visited = new HashSet<>();
-
-        classifyImpl(tuple, visited, set, result, 1.0f);
-
-        return result;
-
+        
+        return set;
     }
 
     private boolean nodeHasOffParent(DirectedGraphNode node) {

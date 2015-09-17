@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import static net.coderodde.ai.bayesiannetwork.BayesNetworkClassifier.classify;
 
 /**
  * This class implements a console program for working on Bayes networks.
@@ -25,7 +26,15 @@ public class App {
     private final ProbabilityMap<DirectedGraphNode> probabilityMap =
             new ProbabilityMap<>();
 
+    /**
+     * Indicates whether the state of the graph was changed after last
+     * compilation.
+     */
     private boolean stateModified = true;
+    
+    /**
+     * Caches the last classification result for queries.
+     */
     private ClassificationResult result;
 
     private void loop() {
@@ -39,70 +48,338 @@ public class App {
                 return;
             }
 
-            String commandLine = scanner.nextLine().trim();
+            String command = scanner.nextLine().trim();
 
-            if (commandLine.isEmpty()) {
+            if (command.isEmpty()) {
                 // No text in the command line.
                 continue;
             }
 
-            if (commandLine.equals("quit")) {
+            if (command.equals("quit")) {
                 break;
             }
 
-            String[] words = commandLine.split("\\s+");
+            if (command.startsWith("#")) {
+                // A comment line.
+                continue;
+            }
+            
+            String[] words = command.split("\\s+");
 
             switch (words[0]) {
-                case "node": {
-                    handleNodeCommand(words);
-                    break;
+                case "new": {
+                    handleNew(words);
+                    continue;
                 }
-
+                
+                case "del": {
+                    handleDel(words);
+                    continue;
+                }
+                
                 case "connect": {
-                    handleConnectCommand(words);
-                    break;
+                    handleConnect(words);
+                    continue;
                 }
-
+                
                 case "disconnect": {
-                    handleDisconnectCommand(words);
-                    break;
+                    handleDisconnect(words);
+                    continue;
                 }
-
-                case "print": {
-                    handlePrintCommand();
-                    break;
-                } 
-
-                default: {
-                    if (words[0].startsWith("p(")) {
-                        tryQuery(commandLine);
-                    } else {
-                        System.out.println(
-                                "Unknown command: \"" + commandLine + "\".");
-                    }   
+                
+                case "list": {
+                    handleList();
+                    continue;
+                }
+                
+                case "is": {
+                    handleIs(words);
+                    continue;
                 }
             }
+            
+            if (handleQuery(command)) {
+                continue;
+            }
+            
+            handlePrintNode(words);
         }
 
         System.out.println("Bye!");
     }
 
-    private void tryQuery(String line) {
-        if (!line.startsWith("p(")) {
+    private static boolean isValidIdentifier(String identifier) {
+        if (identifier.isEmpty()) {
+            return false;
+        }
+        
+        if (!Character.isJavaIdentifierStart(identifier.charAt(0))) {
+            return false;
+        }
+        
+        for (int i = 1; i < identifier.length(); ++i) {
+            if (!Character.isJavaIdentifierPart(identifier.charAt(i))) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    private void handleNew(String[] words) {
+        if (words.length < 3) {
+            System.out.println("ERROR: cannot parse 'new' command.");
             return;
+        }
+        
+        if (words.length >= 4 && !words[3].startsWith("#")) {
+            System.out.println("ERROR: Bad comment format.");
+            return;
+        }
+        
+        String nodeName = words[1];
+        String probabilityString = words[2];
+        
+        if (!isValidIdentifier(nodeName)) {
+            System.out.println("ERROR: \"" + nodeName + "\" is a bad node " +
+                               "identifier.");
+            return;
+        }
+        
+        double probability;
+        
+        try {
+            probability = Double.parseDouble(probabilityString);
+        } catch (NumberFormatException ex) {
+            System.out.println("ERROR: Cannot parse \"" + probabilityString + 
+                               "\" as a probability value.");
+            return;
+        }
+        
+        if (Double.isNaN(probability)) {
+            System.out.println("ERROR: Input probability is NaN.");
+            return;
+        }
+        
+        if (probability < 0.0) {
+            System.out.println("ERROR: Probability is too small.");
+            return;
+        }
+        
+        if (probability > 1.0) {
+            System.out.println("ERROR: Probability is too large.");
+            return;
+        }
+        
+        // Associate (or reassociate) the node with the probability value.
+        DirectedGraphNode newnode = new DirectedGraphNode(nodeName);
+        nodeMap.put(nodeName, newnode);
+        probabilityMap.put(newnode, probability);
+        stateModified = true;
+    }
+    
+    private void handleDel(String[] words) {
+        if (words.length < 2) {
+            System.out.println(
+                    "ERROR: Missing the name of the node to delete.");
+            return;
+        }
+        
+        String nodeName = words[1];
+        
+        if (!isValidIdentifier(nodeName)) {
+            System.out.println("ERROR: \"" + nodeName + "\" is not a valid " +
+                               "node name.");
+            return;
+        }
+        
+        DirectedGraphNode removed = nodeMap.remove(nodeName);
+        
+        if (removed != null) {
+            probabilityMap.remove(removed);
+            stateModified = true;
+        }
+    }
+    
+    private void handleConnect(String[] words) {
+        if (words.length < 4) {
+            System.out.println("ERROR: Missing required tokens.");
+            return;
+        }
+        
+        if (!words[2].equals("to")) {
+            System.out.println("ERROR: Format error.");
+            return;
+        }
+        
+        String tailNodeName = words[1];
+        String headNodeName = words[3];
+        
+        if (!isValidIdentifier(tailNodeName)) {
+            System.out.println("ERROR: Bad tail node name: \"" + tailNodeName +
+                               "\".");
+            return;
+        }
+        
+        if (!isValidIdentifier(headNodeName)) {
+            System.out.println("ERROR: Bad head node name: \"" + headNodeName +
+                               "\".");
+            return;
+        }
+        
+        if (!nodeMap.containsKey(tailNodeName)) {
+            System.out.println("ERROR: No node with name \"" + tailNodeName + 
+                               "\".");
+            return;
+        }
+        
+        if (!nodeMap.containsKey(headNodeName)) {
+            System.out.println("ERROR: No node with name \"" + headNodeName + 
+                               "\".");
+            return;
+        }
+        
+        if (tailNodeName.equals(headNodeName)) {
+            System.out.println("ERROR: Self-loops not allowed.");
+            return;
+        }
+        
+        DirectedGraphNode tail = nodeMap.get(tailNodeName);
+        DirectedGraphNode head = nodeMap.get(headNodeName);
+        
+        if (!tail.hasChild(head)) {
+            tail.addChild(head);
+            stateModified = true;
+        }
+    }
+    
+    private void handleDisconnect(String[] words) {
+        if (words.length < 4) {
+            System.out.println("ERROR: Missing required tokens.");
+            return;
+        }
+        
+        if (!words[2].equals("from")) {
+            System.out.println("ERROR: Format error.");
+            return;
+        }
+        
+        String tailNodeName = words[1];
+        String headNodeName = words[3];
+        
+        if (!isValidIdentifier(tailNodeName)) {
+            System.out.println("ERROR: Bad tail node name: \"" + tailNodeName +
+                               "\".");
+            return;
+        }
+        
+        if (!isValidIdentifier(headNodeName)) {
+            System.out.println("ERROR: Bad head node name: \"" + headNodeName +
+                               "\".");
+            return;
+        }
+        
+        if (!nodeMap.containsKey(tailNodeName)) {
+            System.out.println("ERROR: No node with name \"" + tailNodeName + 
+                               "\".");
+            return;
+        }
+        
+        if (!nodeMap.containsKey(headNodeName)) {
+            System.out.println("ERROR: No node with name \"" + headNodeName + 
+                               "\".");
+            return;
+        }
+        
+        if (tailNodeName.equals(headNodeName)) {
+            return;
+        }
+        
+        DirectedGraphNode tail = nodeMap.get(tailNodeName);
+        DirectedGraphNode head = nodeMap.get(headNodeName);
+        
+        if (tail.hasChild(head)) {
+            tail.removeChild(head);
+            stateModified = true;
+        }
+    }
+    
+    private void handleIs(String[] words) {
+        if (words.length < 5
+                || !words[2].equals("connected")
+                || !words[3].equals("to")) {
+            System.out.println("ERROR: Bad format.");
+            return;
+        }
+        
+        String tailNodeName = words[1];
+        String headNodeName = words[4];
+        
+        if (!isValidIdentifier(tailNodeName)) {
+            System.out.println("ERROR: Bad tail node name \"" + tailNodeName +
+                               "\".");
+            return;
+        }
+        
+        if (!isValidIdentifier(headNodeName)) {
+            System.out.println("ERROR: Bad head node name \"" + headNodeName +
+                               "\".");
+            return;
+        }
+        
+        if (!nodeMap.containsKey(tailNodeName)) {
+            System.out.println("ERROR: No node \"" + tailNodeName + "\"");
+            return;
+        }
+        
+        if (!nodeMap.containsKey(headNodeName)) {
+            System.out.println("ERROR: No node \"" + headNodeName + "\"");
+            return;
+        }
+        
+        DirectedGraphNode tail = nodeMap.get(tailNodeName);
+        DirectedGraphNode head = nodeMap.get(headNodeName);
+        
+        System.out.println(tail.hasChild(head));
+    }
+    
+    private void handleList() {
+        if (stateModified) {
+            List<DirectedGraphNode> network = new ArrayList<>(nodeMap.values());
+
+            try {
+                result = BayesNetworkClassifier.classify(network, 
+                                                         probabilityMap);
+                stateModified = false;
+            } catch (Exception ex) {
+                System.out.println("Error: " + ex.getMessage());
+                return;
+            }
+        }
+
+        if (result == null) {
+            System.out.println("Error: no network built yet.");
+        } else {
+            System.out.println(result);
+        }
+    }
+    
+    private boolean handleQuery(String line) {
+        if (!line.startsWith("p(")) {
+            return false;
         }
 
         if (!line.endsWith(")")) {
-            System.out.println("No trailing \")\".");
-            return;
+            System.out.println("ERROR: No trailing \")\".");
+            return false;
         }
 
         String innerContent = line.substring(2, line.length() - 1).trim();
         String[] parts = innerContent.split("\\|");
 
         if (parts.length != 2) {
-            System.out.println("Error: No single delimeter bar |");
-            return;
+            System.out.println("ERROR: No single delimeter bar |");
+            return false;
         }
 
         Map<DirectedGraphNode, Boolean> posterioriVariables = new HashMap<>();
@@ -125,8 +402,8 @@ public class App {
                 }
 
                 if (!nodeMap.containsKey(varName)) {
-                    System.out.println("Error: no node \"" + varName + "\".");
-                    return;
+                    System.out.println("ERROR: No node \"" + varName + "\".");
+                    return false;
                 } 
 
                 posterioriVariables.put(nodeMap.get(varName), !negate);
@@ -145,160 +422,81 @@ public class App {
                 }
 
                 if (!nodeMap.containsKey(varName)) {
-                    System.out.println("Error: no node \"" + varName + "\".");
-                    return;
+                    System.out.println("ERROR: No node \"" + varName + "\".");
+                    return false;
                 }
 
                 aprioriVariables.put(nodeMap.get(varName), !negate);
             }
 
-            System.out.println(result.query(posterioriVariables, aprioriVariables));
+            if (stateModified) {
+                try {
+                    result = classify(new ArrayList<>(nodeMap.values()), 
+                                      probabilityMap);
+                    
+                    if (result != null) {
+                        stateModified = false;
+                    }
+                } catch (Exception ex) {
+                    System.out.println("ERROR: " + ex.getMessage());
+                    return false;
+                }
+            }
+            
+            System.out.println(result.query(posterioriVariables, 
+                                            aprioriVariables));
         } catch (Exception ex) {
             System.out.println("Error: " + ex.getMessage());
+            return false;
         }
+        
+        return true;
     }
 
-    private void handleNodeCommand(String[] words) {
-        if (words.length == 1) {
-            System.out.println("Error: no node name given.");
+    private void handlePrintNode(String[] words) {
+        if (words.length > 1 && !words[1].startsWith("#")) {
+            System.out.println("ERROR: Bad command.");
             return;
-        } 
-
-        String nodeName = words[1].trim();
-
-        if (!nodeMap.containsKey(nodeName)) {
-            if (words.length == 2) {
-                System.out.println("Node \"" + nodeName + "\" is not defined.");
-                return;
-            }
-
-            // Try to add a new node.
-            double newProbability;
-
-            try {
-                newProbability = Double.parseDouble(words[2]);
-            } catch (NumberFormatException ex) {
-                System.out.println(
-                        "Error: " + words[2] + " is an invalid probability.");
-                return;
-            }
-
-            try {
-                DirectedGraphNode newnode = new DirectedGraphNode(words[1]);
-                nodeMap.put(nodeName, newnode);
-                probabilityMap.put(newnode, newProbability);
-                stateModified = true;
-            } catch (IllegalArgumentException ex) {
-                System.out.println("Error: " + ex.getMessage());
-                nodeMap.remove(words[1]);
-            }
-
+        }
+        
+        if (!nodeMap.containsKey(words[0])) {
+            System.out.println("\"" + words[0] + "\": no such node.");
             return;
-        } else {
-            if (words.length == 2) {
-                // Print the current probability of a node.
-                System.out.println(probabilityMap.get(nodeMap.get(nodeName)));
-            } else if (words.length > 2) {
-                // Update the probability.
-                double newProbability;
-
-                try {
-                    newProbability = Double.parseDouble(words[2]);
-                } catch (NumberFormatException ex) {
-                    System.out.println(
-                            "Error: misspelled probability: " + words[2]);
-                    return;
-                }
-
-                try {
-                    probabilityMap.put(nodeMap.get(nodeName), newProbability);
-                } catch (IllegalArgumentException ex) {
-                    System.out.println("Error: " + ex.getMessage());
-                }
+        }
+        
+        DirectedGraphNode node = nodeMap.get(words[0]);
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        
+        for (DirectedGraphNode parent : node.parents()) {
+            sb.append(parent);
+            
+            if (i++ < node.parents().size() - 1) {
+                sb.append(", ");
             }
         }
+        
+        String parentListString = sb.toString();
+        
+        sb.delete(0, sb.length());
+        i = 0;
+        
+        for (DirectedGraphNode child : node.children()) {
+            sb.append(child);
+            
+            if (i++ < node.children().size() - 1) {
+                sb.append(", ");
+            }
+        }
+        
+        String childListString = sb.toString();
+        
+        System.out.println(
+                "\"" + words[0] + "\", probability " + 
+                probabilityMap.get(node) + ", parents: <" + parentListString +
+                ">, children: <" + childListString + ">");
     }
-
-    private void handleConnectCommand(String[] words) {
-        if (words.length < 4 || !words[2].equals("to")) {
-            System.out.println("Bad format. Use \"connect <tail> to <head>\"");
-            return;
-        }
-
-        String tailNodeName = words[1];
-        String headNodeName = words[3];
-
-        if (!nodeMap.containsKey(tailNodeName)) {
-            System.out.println("Error: \"" + words[1] + "\", no such node.");
-            return;
-        }
-
-        if (!nodeMap.containsKey(headNodeName)) {
-            System.out.println("Error: \"" + words[1] + "\", no such node.");
-            return;
-        }
-
-        DirectedGraphNode tail = nodeMap.get(tailNodeName);
-        DirectedGraphNode head = nodeMap.get(headNodeName);
-
-        if (tail.hasChild(head)) {
-            return;
-        }
-
-        tail.addChild(head);
-        stateModified = true;
-    }
-
-    private void handleDisconnectCommand(String[] words) {
-        if (words.length < 4 || !words[2].equals("from")) {
-            System.out.println("Bad format. Use \"connect <tail> to <head>\"");
-            return;
-        }
-
-        String tailNodeName = words[1];
-        String headNodeName = words[3];
-
-        if (!nodeMap.containsKey(tailNodeName)) {
-            System.out.println("Error: \"" + words[1] + "\", no such node.");
-            return;
-        }
-
-        if (!nodeMap.containsKey(headNodeName)) {
-            System.out.println("Error: \"" + words[1] + "\", no such node.");
-            return;
-        }
-
-        DirectedGraphNode tail = nodeMap.get(tailNodeName);
-        DirectedGraphNode head = nodeMap.get(headNodeName);
-
-        if (!tail.hasChild(head)) {
-            return;
-        }
-
-        tail.removeChild(head);
-        stateModified = true;
-    }
-
-    private void handlePrintCommand() {
-        if (stateModified) {
-            List<DirectedGraphNode> network = new ArrayList<>(nodeMap.values());
-
-            try {
-                result = BayesNetworkClassifier.classify(network, probabilityMap);
-                stateModified = false;
-            } catch (Exception ex) {
-                System.out.println("Error: " + ex.getMessage());
-                return;
-            }
-        }
-
-        if (result == null) {
-            System.out.println("Error: no network built yet.");
-        } else {
-            System.out.println(result);
-        }
-    }
-
+    
     public static void main(String[] args) {
         App app = new App();
         app.loop();

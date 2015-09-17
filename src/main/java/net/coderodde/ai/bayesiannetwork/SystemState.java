@@ -51,7 +51,7 @@ final class SystemState {
             String field = String.format("%" + fieldLength + "s",
                                          map.get(node) ? "1" : "0");
             sb.append(field);
-            
+
             if (i < nodeList.size() - 1) {
                 sb.append(", ");
                 i++;

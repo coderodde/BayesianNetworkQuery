@@ -44,6 +44,19 @@ public class DirectedGraphNode implements Comparable<DirectedGraphNode> {
         }
     }
     
+    public void clear() {
+        for (DirectedGraphNode child : children) {
+            child.parents.remove(this);
+        }
+        
+        for (DirectedGraphNode parent : parents) {
+            parent.children.remove(this);
+        }
+        
+        children.clear();
+        parents.clear();
+    }
+    
     public boolean isIndependent() {
         return parents.isEmpty();
     }
