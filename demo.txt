@@ -44,3 +44,9 @@ list
 # Try a couple of queries.
 p(Battery|not Moves, not Starts)
 p(not Battery| not Starts)
+
+# Show help.
+help
+help is connected
+quit
+echo You must not see this message.

@@ -14,7 +14,7 @@ import static net.coderodde.ai.bayesiannetwork.BayesNetworkClassifier.classify;
  * This class implements a console program for working on Bayes networks.
  * 
  * @author Rodion "rodde" Efremov
- * @version 1.6 (Sep 15, 2015)
+ * @version 1.61 (Sep 18, 2015)
  */
 public class App {
 
@@ -83,6 +83,11 @@ public class App {
             }
 
             if (command.equals("quit")) {
+                if (fileName != null) {
+                    // Print no 'Bye!'
+                    return;
+                }
+                
                 break;
             }
 
@@ -126,6 +131,11 @@ public class App {
                 
                 case "echo": {
                     handleEcho(command);
+                    continue;
+                }
+                
+                case "help": {
+                    handleHelp(words); 
                     continue;
                 }
             }
@@ -532,6 +542,130 @@ public class App {
                 "\"" + words[0] + "\", probability " + 
                 probabilityMap.get(node) + ", parents: <" + parentListString +
                 ">, children: <" + childListString + ">");
+    }
+    
+    private void handleHelp(String[] words) {
+        if (words.length > 3) {
+            System.out.println(
+                    "ERROR: The syntax for \"help\" command is " +
+                    "\"help [keywords]\".");
+            return;
+        } else if (words.length == 3) {
+            if (!words[1].equals("is") || !words[2].equals("connected")) {
+                System.out.println(
+                        "ERROR: The syntax for \"help\" command is " +
+                        "\"help [keywords]\".");
+                return;
+            }
+        }
+        
+        if (words.length == 1) {
+            System.out.println("  help new");
+            System.out.println("  help del");
+            System.out.println("  help connect");
+            System.out.println("  help is connected");
+            System.out.println("  help disconnect");
+            System.out.println("  help list");
+            System.out.println("  help echo");
+            System.out.println("  help #");
+            System.out.println("  help <nodename>");
+            System.out.println("  help p");
+            System.out.println("  help quit");
+            return;
+        }
+        
+        switch (words[1]) {
+            case "new": {
+                System.out.println("\"new <nodename> <probability>\"");
+                System.out.println("Creates a new node with name <nodename> " +
+                                   "and probability <probability>.");
+                break;
+            }
+            
+            case "del": {
+                System.out.println("\"del <nodename>\"");
+                System.out.println("Deletes the node with name <nodename>.");
+                break;
+            }
+            
+            case "connect": {
+                System.out.println("\"connect <tailnode> to <headnode>\"");
+                System.out.println("Creates an arc from <tailnode> to " +
+                                   "<headnode>.");
+                break;
+            }
+            
+            case "is": {
+                if (words.length != 3) {
+                    System.out.println(
+                            "ERROR: No help topic. Did you mean " +
+                            "\"help is connected\"?");
+                } else {
+                    System.out.println(
+                            "\"is <tailnode> connected to <headnode>\"");
+                    System.out.println("Asks whether <tailnode> has a child " +
+                                       "<headnode>.");
+                }
+                    
+                break;
+            }
+            
+            case "disconnect": {
+                System.out.println("\"disconnect <tailnode> from <headnode>\"");
+                System.out.println("Removes an arc from <tailnode> to " +
+                                   "<headnode>.");
+                break;
+            }
+            
+            case "list": {
+                System.out.println("\"list\"");
+                System.out.println("Lists all the possible system states.");
+                break;
+            }
+            
+            case "echo": {
+                System.out.println("\"echo [<text>]\"");
+                System.out.println("Prints <text> to the console.");
+                break;
+            }
+                
+            case "#": {
+                System.out.println("\"# [<text>]\"");
+                System.out.println("Starts a line comment.");
+                break;
+            }
+            
+            case "p": {
+                System.out.println(
+                        "\"p(<posterioriVariables> | " +
+                        "<aprioriVariables>)\"");
+                System.out.println("Makes a query.");
+                System.out.println("EXAMPLE 1: p(not var1 | var2, not var3)");
+                System.out.println("EXAMPLE 2: p(var 1 | var2)");
+                System.out.println(".");
+                System.out.println(".");
+                System.out.println(".");
+                break;
+            }
+            
+            case "<nodename>": {
+                System.out.println("\"<nodename>\"");
+                System.out.println("Print the node information.");
+                break;
+            }
+            
+            case "quit": {
+                System.out.println("\"quit\"");
+                System.out.println("Quits the program.");
+                break;
+            }
+            
+            default: {
+                System.out.println(
+                        "ERROR: Unknown topic: \"" + words[1] + "\"");
+                break;
+            }
+        }
     }
     
     public static void main(String[] args) {
