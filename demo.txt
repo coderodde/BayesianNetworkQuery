@@ -1,4 +1,46 @@
-new A 0.4
-new B 0.3
-connect A to B
+# Create nodes.
+new Battery  0.9  # Comment
+new Radio    0.9  
+new Ignition 0.95
+new Fuel     0.95
+new Starts   0.99
+new Moves    0.99
+
+# Print a node.
+Fuel
+del Fuel
+echo Removed Fuel
+Fuel
+new Fuel 0.95
+
+# Create arcs.
+connect Battery  to Radio
+connect Battery  to Ignition
+connect Ignition to Starts
+connect Fuel     to Starts
+connect Starts   to Moves
+
+# Check a couple of arcs.
+echo Battery connected to Radio?
+is Battery connected to Radio   # Must be 'true'.
+echo Radio connected to Battery?
+is Radio   connected to Battery # Must be 'false'.
+
+# Remove an arc (Battery, Radio).
+disconnect Battery from Radio
+echo Removed arc (Battery, Radio).
+echo Is Battery connected to Radio?
+is Battery connected to Radio
+connect Battery to Radio
+
+# Print a couple of nodes.
+Battery
+Starts
+Radio
+
+# List all possible system states with their probabilities.
 list
+
+# Try a couple of queries.
+p(Battery|not Moves, not Starts)
+p(not Battery| not Starts)

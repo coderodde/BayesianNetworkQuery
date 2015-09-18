@@ -40,7 +40,7 @@ public class App {
      */
     private ClassificationResult result;
 
-    private void loop(String fileName, boolean terminateAfterEOF) {
+    private void loop(String fileName) {
         Scanner scanner;
         boolean turnOffPrompt;
         
@@ -66,10 +66,6 @@ public class App {
             
             if (!scanner.hasNextLine()) {
                 if (fileName != null) {
-                    if (terminateAfterEOF) {
-                        return;
-                    }
-                    
                     fileName = null;
                     turnOffPrompt = false;
                     scanner = new Scanner(System.in);
@@ -125,6 +121,11 @@ public class App {
                 
                 case "is": {
                     handleIs(words);
+                    continue;
+                }
+                
+                case "echo": {
+                    handleEcho(command);
                     continue;
                 }
             }
@@ -395,6 +396,11 @@ public class App {
         }
     }
     
+    private void handleEcho(String command) {
+        String leftovers = command.substring(4).trim();
+        System.out.println(leftovers);
+    }
+    
     private boolean handleQuery(String line) {
         if (!line.startsWith("p(")) {
             return false;
@@ -530,22 +536,10 @@ public class App {
     
     public static void main(String[] args) {
         App app = new App();
-        
-        if (args.length == 1) {
-            if (args[0].equals("-i")) {
-                System.out.println(
-                        "ERROR: A file name expected after \"-i\".");
-                return;
-            }
-            
-            app.loop(args[0], true);
-        } else if (args.length == 2) {
-            if (!args[0].equals("-i")) {
-                System.out.println("ERROR: \"-i\" is expected.");
-                return;
-            }
-            
-            app.loop(args[1], false);
+        if (args.length == 0) {
+            app.loop(null);
+        } else {
+            app.loop(args[0]);
         }
     }
 }
