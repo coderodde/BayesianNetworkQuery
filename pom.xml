@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.coderodde.ai.bayesiannetwork</groupId>
     <artifactId>BayesianNetworkQuery</artifactId>
-    <version>1.6</version>
+    <version>1.61</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -31,6 +31,15 @@
                 <version>1.1</version>
                 <configuration>
                     <mainClass>net.coderodde.ai.bayesiannetwork.App</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
         </plugins>
