@@ -786,8 +786,6 @@ public class App {
     }
     
     public static void main(String[] args) {
-        gen();
-        
         if (hasHelpFlag(args)) {
             System.out.println("java -jar <PROGRAM.jar> [-h] [FILE_NAME]");
             return;
