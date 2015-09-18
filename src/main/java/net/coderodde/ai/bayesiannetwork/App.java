@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import static net.coderodde.ai.bayesiannetwork.BayesNetworkClassifier.classify;
+import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
 
 /**
  * This class implements a console program for working on Bayes networks.
@@ -388,7 +389,19 @@ public class App {
     private void handleList() {
         if (stateModified) {
             List<DirectedGraphNode> network = new ArrayList<>(nodeMap.values());
-
+            
+            if (network.isEmpty()) {
+                System.out.println("ERROR: You have no nodes.");
+                return;
+            }
+            
+            List<DirectedGraphNode> component = findEntireGraph(network.get(0));
+            
+            if (component.size() < network.size()) {
+                System.out.println("ERROR: The graph is not connected.");
+                return; 
+            }
+            
             try {
                 result = BayesNetworkClassifier.classify(network, 
                                                          probabilityMap);

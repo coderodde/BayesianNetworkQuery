@@ -48,5 +48,11 @@ p(not Battery| not Starts)
 # Show help.
 help
 help is connected
+
+# Make the graph disonnected.
+disconnect Ignition from Starts
+echo Here, the graph must not be connected.
+list
+
 quit
 echo You must not see this message.
