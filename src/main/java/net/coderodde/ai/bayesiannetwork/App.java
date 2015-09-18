@@ -258,6 +258,7 @@ public class App {
         DirectedGraphNode removed = nodeMap.remove(nodeName);
         
         if (removed != null) {
+            removed.clear();
             probabilityMap.remove(removed);
             stateModified = true;
         }
