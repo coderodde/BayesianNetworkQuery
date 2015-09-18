@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 import static net.coderodde.ai.bayesiannetwork.BayesNetworkClassifier.classify;
 import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
@@ -423,9 +424,22 @@ public class App {
             }
             
             try {
+                long startTime = System.currentTimeMillis();
                 result = BayesNetworkClassifier.classify(network, 
                                                          probabilityMap);
+                long endTime = System.currentTimeMillis();
                 stateModified = false;
+                
+                System.out.println("Compiled the graph in " + 
+                                  (endTime - startTime) + " milliseconds.");
+                if (Math.abs(1.0 - result.getSumOfProbabilities()) > 0.0001) {
+                    throw new IllegalStateException(
+                    "The sum of probabilities over all possible states does " + 
+                    "not sum to 1.0");
+                }
+                
+                System.out.println("Number of possible states: " +
+                                   result.getNumberOfStates());
             } catch (Exception ex) {
                 System.out.println("Error: " + ex.getMessage());
                 return;
@@ -711,7 +725,69 @@ public class App {
         return false;
     }
     
+    private static void gen() {
+        int width = 8;
+        int depth = 9;
+        
+        long seed = System.currentTimeMillis();
+        Random random = new Random(seed);
+        List<List<DirectedGraphNode>> levels = new ArrayList<>();
+        int id = 0;
+        
+        for (int d = 0; d < depth; ++d) {
+            int w = Math.max(4, random.nextInt(width) + 1);
+            List<DirectedGraphNode> level = new ArrayList<>(w);
+            
+            for (int i = 0; i < w; ++i) {
+                level.add(new DirectedGraphNode("nde" + id));
+                id++;
+            }
+            
+            levels.add(level);
+        }
+        
+        int edges = 200;
+        
+        while (edges > 0) {
+            int levelA = random.nextInt(levels.size());
+            int levelB = random.nextInt(levels.size());
+            
+            if (levelA == levelB) {
+                continue;
+            }
+            
+            if (levelA > levelB) {
+                int tmp = levelA;
+                levelA = levelB;
+                levelB = tmp;
+            }
+            
+            List<DirectedGraphNode> listA = levels.get(levelA);
+            List<DirectedGraphNode> listB = levels.get(levelB);
+            
+            listA.get(random.nextInt(listA.size()))
+                    .addChild(listB.get(random.nextInt(listB.size())));
+            --edges;
+        }
+        
+        for (List<DirectedGraphNode> level : levels) {
+            for (DirectedGraphNode node : level) {
+                System.out.println("new " + node.toString() + " 0.5");
+            }
+        }
+        
+        for (List<DirectedGraphNode> level : levels) {
+            for (DirectedGraphNode node : level) {
+                for (DirectedGraphNode child : node.children()) {
+                    System.out.println("connect " + node + " to " + child);
+                }
+            }
+        }
+    }
+    
     public static void main(String[] args) {
+        gen();
+        
         if (hasHelpFlag(args)) {
             System.out.println("java -jar <PROGRAM.jar> [-h] [FILE_NAME]");
             return;

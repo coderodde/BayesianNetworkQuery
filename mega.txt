@@ -1,0 +1,221 @@
+new nde0 0.5
+new nde1 0.5
+new nde2 0.5
+new nde3 0.5
+new nde4 0.5
+new nde5 0.5
+new nde6 0.5
+new nde7 0.5
+new nde8 0.5
+new nde9 0.5
+new nde10 0.5
+new nde11 0.5
+new nde12 0.5
+new nde13 0.5
+new nde14 0.5
+new nde15 0.5
+new nde16 0.5
+new nde17 0.5
+new nde18 0.5
+new nde19 0.5
+new nde20 0.5
+new nde21 0.5
+new nde22 0.5
+new nde23 0.5
+new nde24 0.5
+new nde25 0.5
+new nde26 0.5
+new nde27 0.5
+new nde28 0.5
+new nde29 0.5
+new nde30 0.5
+new nde31 0.5
+new nde32 0.5
+new nde33 0.5
+new nde34 0.5
+new nde35 0.5
+new nde36 0.5
+new nde37 0.5
+new nde38 0.5
+new nde39 0.5
+new nde40 0.5
+new nde41 0.5
+new nde42 0.5
+new nde43 0.5
+connect nde0 to nde33
+connect nde0 to nde4
+connect nde0 to nde32
+connect nde0 to nde43
+connect nde0 to nde8
+connect nde0 to nde39
+connect nde0 to nde5
+connect nde0 to nde23
+connect nde0 to nde26
+connect nde0 to nde28
+connect nde0 to nde6
+connect nde0 to nde7
+connect nde1 to nde14
+connect nde1 to nde39
+connect nde1 to nde22
+connect nde1 to nde6
+connect nde1 to nde41
+connect nde1 to nde42
+connect nde1 to nde17
+connect nde1 to nde5
+connect nde1 to nde26
+connect nde1 to nde28
+connect nde1 to nde7
+connect nde1 to nde4
+connect nde2 to nde12
+connect nde2 to nde28
+connect nde2 to nde4
+connect nde2 to nde21
+connect nde2 to nde42
+connect nde2 to nde18
+connect nde2 to nde40
+connect nde2 to nde35
+connect nde2 to nde17
+connect nde2 to nde10
+connect nde3 to nde5
+connect nde3 to nde38
+connect nde3 to nde10
+connect nde3 to nde14
+connect nde3 to nde40
+connect nde3 to nde22
+connect nde3 to nde29
+connect nde3 to nde4
+connect nde3 to nde11
+connect nde4 to nde43
+connect nde4 to nde19
+connect nde4 to nde15
+connect nde4 to nde42
+connect nde4 to nde14
+connect nde4 to nde34
+connect nde4 to nde33
+connect nde4 to nde29
+connect nde4 to nde38
+connect nde4 to nde37
+connect nde5 to nde33
+connect nde5 to nde37
+connect nde5 to nde40
+connect nde5 to nde39
+connect nde5 to nde36
+connect nde5 to nde15
+connect nde5 to nde38
+connect nde5 to nde25
+connect nde6 to nde17
+connect nde6 to nde30
+connect nde6 to nde14
+connect nde6 to nde11
+connect nde6 to nde8
+connect nde6 to nde35
+connect nde6 to nde39
+connect nde6 to nde41
+connect nde7 to nde8
+connect nde7 to nde35
+connect nde7 to nde31
+connect nde7 to nde10
+connect nde7 to nde16
+connect nde7 to nde43
+connect nde7 to nde20
+connect nde7 to nde37
+connect nde7 to nde41
+connect nde8 to nde27
+connect nde8 to nde21
+connect nde8 to nde19
+connect nde8 to nde38
+connect nde8 to nde30
+connect nde8 to nde16
+connect nde9 to nde36
+connect nde9 to nde19
+connect nde9 to nde43
+connect nde9 to nde33
+connect nde9 to nde37
+connect nde9 to nde40
+connect nde9 to nde25
+connect nde9 to nde30
+connect nde9 to nde39
+connect nde10 to nde25
+connect nde10 to nde22
+connect nde10 to nde28
+connect nde10 to nde23
+connect nde11 to nde19
+connect nde11 to nde43
+connect nde11 to nde39
+connect nde11 to nde42
+connect nde11 to nde41
+connect nde11 to nde38
+connect nde11 to nde24
+connect nde11 to nde22
+connect nde11 to nde23
+connect nde12 to nde37
+connect nde12 to nde41
+connect nde12 to nde31
+connect nde12 to nde19
+connect nde13 to nde38
+connect nde13 to nde29
+connect nde14 to nde42
+connect nde14 to nde27
+connect nde14 to nde37
+connect nde15 to nde35
+connect nde15 to nde36
+connect nde15 to nde23
+connect nde15 to nde33
+connect nde16 to nde40
+connect nde17 to nde20
+connect nde17 to nde25
+connect nde17 to nde43
+connect nde17 to nde38
+connect nde18 to nde41
+connect nde18 to nde22
+connect nde18 to nde40
+connect nde19 to nde38
+connect nde19 to nde30
+connect nde19 to nde42
+connect nde19 to nde39
+connect nde19 to nde32
+connect nde20 to nde42
+connect nde20 to nde26
+connect nde20 to nde40
+connect nde20 to nde27
+connect nde21 to nde39
+connect nde21 to nde37
+connect nde21 to nde43
+connect nde21 to nde41
+connect nde21 to nde40
+connect nde21 to nde38
+connect nde22 to nde37
+connect nde22 to nde43
+connect nde22 to nde40
+connect nde23 to nde42
+connect nde23 to nde30
+connect nde23 to nde37
+connect nde23 to nde29
+connect nde23 to nde38
+connect nde24 to nde43
+connect nde24 to nde38
+connect nde25 to nde33
+connect nde25 to nde40
+connect nde25 to nde38
+connect nde27 to nde35
+connect nde27 to nde33
+connect nde27 to nde36
+connect nde27 to nde39
+connect nde27 to nde43
+connect nde28 to nde38
+connect nde28 to nde43
+connect nde29 to nde37
+connect nde31 to nde38
+connect nde31 to nde39
+connect nde32 to nde41
+connect nde32 to nde38
+connect nde33 to nde38
+connect nde33 to nde39
+connect nde34 to nde43
+connect nde34 to nde39
+connect nde35 to nde41
+connect nde35 to nde36
+connect nde35 to nde43
+connect nde38 to nde42
+connect nde38 to nde41
+connect nde39 to nde40

@@ -68,6 +68,10 @@ public class ClassificationResult {
         return probability;
     }
 
+    public int getNumberOfStates() {
+        return systemStateList.size();
+    }
+    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("(");
