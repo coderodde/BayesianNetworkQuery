@@ -57,10 +57,6 @@ public class DirectedGraphNode implements Comparable<DirectedGraphNode> {
         parents.clear();
     }
     
-    public boolean isIndependent() {
-        return parents.isEmpty();
-    }
-    
     public Set<DirectedGraphNode> children() {
         return Collections.<DirectedGraphNode>unmodifiableSet(children);
     }

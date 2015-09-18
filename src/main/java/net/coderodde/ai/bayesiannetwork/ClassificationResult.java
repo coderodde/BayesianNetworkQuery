@@ -10,13 +10,23 @@ import java.util.Objects;
  * This class implements the classification result of the Bayes network.
  * 
  * @author Rodion "rodde" Efremov
- * @version 1.61 (Sep 16, 2015)
+ * @version 1.618 (Sep 18, 2015)
  */
 public class ClassificationResult {
 
     private final List<SystemState> systemStateList = new ArrayList<>();
-    private final List<DirectedGraphNode> nodeList = new ArrayList<>();
+    private List<DirectedGraphNode> nodeList;
 
+    /**
+     * Computes the probability of posteriori variables given the apriori
+     * variables.
+     * 
+     * @param posterioriVariableMap a map mapping each posteriori variable to 
+     *                              its state.
+     * @param aprioriVariableMap    a map mapping each apriori variable to its
+     *                              state.
+     * @return the probability of expression.
+     */
     public double query(Map<DirectedGraphNode, Boolean> posterioriVariableMap,
                         Map<DirectedGraphNode, Boolean> aprioriVariableMap) {
         Objects.requireNonNull(posterioriVariableMap, 
@@ -51,7 +61,11 @@ public class ClassificationResult {
         return aprioriProbability == 0.0 ? 0.0 : posterioriProbability / 
                                                  aprioriProbability;
     }
-
+    
+    void setNodeList(List<DirectedGraphNode> nodeList) {
+        this.nodeList = nodeList;
+    }
+    
     /**
      * This method returns the sum of probabilities over all system states, and
      * it <b>must</b> return <b>1.0</b> under any circumstances.

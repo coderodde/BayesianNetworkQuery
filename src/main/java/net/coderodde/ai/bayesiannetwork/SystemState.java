@@ -1,37 +1,59 @@
 package net.coderodde.ai.bayesiannetwork;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class encodes a particular state of the Bayes network and its 
  * probability.
  * 
  * @author Rodion "rodde" Efremov
- * @version 1.61 (Sep 16, 2015)
+ * @version 1.618 (Sep 18, 2015)
  */
 final class SystemState {
 
-    private final Map<DirectedGraphNode, Boolean> map = new HashMap<>();
-    private final List<DirectedGraphNode> nodeList = new ArrayList<>();
+    /**
+     * The set of nodes in this state whose state is "on". All nodes in the
+     * network that are not in this list are considered to have state "off". 
+     */
+    private final Set<DirectedGraphNode> onSet = new HashSet<>();
+    
+    /**
+     * The probability of this state.
+     */
     private final double probability;
+    
+    /**
+     * The {@code ClassificationResult} this state belongs to.
+     */
+    private final ClassificationResult owner;
 
     SystemState(Map<DirectedGraphNode, Boolean> map, 
-                List<DirectedGraphNode> nodeList,
+                ClassificationResult result,
                 double probability) {
-        this.map.putAll(map);
-        this.nodeList.addAll(nodeList);
+        for (Map.Entry<DirectedGraphNode, Boolean> entry : map.entrySet()) {
+            if (entry.getValue().equals(Boolean.TRUE)) {
+                onSet.add(entry.getKey());
+            }
+        }
+        
         this.probability = probability;
+        this.owner = result;
     }
-
-    boolean stateContainsSubstate(
-            Map<DirectedGraphNode, Boolean> substate) {
+    
+    boolean stateContainsSubstate(Map<DirectedGraphNode, Boolean> substate) {
         for (Map.Entry<DirectedGraphNode, Boolean> entry : 
                 substate.entrySet()) {
-            if (!entry.getValue().equals(map.get(entry.getKey()))) {
-                return false;
+            if (entry.getValue()) {
+                if (!onSet.contains(entry.getKey())) {
+                    return false;
+                }
+            } else {
+                if (onSet.contains(entry.getKey())) {
+                    return false;
+                }
             }
         }
 
@@ -42,14 +64,16 @@ final class SystemState {
         return probability;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("(");
+        List<DirectedGraphNode> nodeList = owner.getNodeList();
         int i = 0;
-
+        
         for (DirectedGraphNode node : nodeList) {
             int fieldLength = node.toString().length();
             String field = String.format("%" + fieldLength + "s",
-                                         map.get(node) ? "1" : "0");
+                                         onSet.contains(node) ? "1" : "0");
             sb.append(field);
 
             if (i < nodeList.size() - 1) {

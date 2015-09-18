@@ -55,6 +55,12 @@ public class Utils {
         return new ArrayList<>(visited);
     }
 
+    /**
+     * Checks that the entire graph reachable from {code start} is acyclic.
+     * 
+     * @param start a representative node of a graph.
+     * @return {@code true} only if the graph has directed cycles.
+     */
     public static boolean graphIsAcyclic(DirectedGraphNode start) {
         List<DirectedGraphNode> nodeList = findEntireGraph(start);
         Map<DirectedGraphNode, NodeColor> map = new HashMap<>();
@@ -79,7 +85,7 @@ public class Utils {
     }
 
     /**
-     * Implements the cycle detection algorithm.
+     * Implements the cycle detection algorithm, which is depth-first search.
      * 
      * @param node the node to start the search from.
      * @param map  the color map.

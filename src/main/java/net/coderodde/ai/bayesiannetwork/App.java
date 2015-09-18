@@ -42,6 +42,14 @@ public class App {
      */
     private ClassificationResult result;
 
+    /**
+     * This method implements the actual REPL (Read, Evaluate, Print, Loop).
+     * 
+     * @param fileNames the array containing the names of the files to execute.
+     *                  This array may be null, in which case the program reads
+     *                  from the console. If array is not {@code null}, executes
+     *                  the files in the order they appear in the array.
+     */
     private void loop(String[] fileNames) {
         Scanner scanner;
         boolean turnOffPrompt;
@@ -71,8 +79,13 @@ public class App {
             }
             
             if (!scanner.hasNextLine()) {
+                // Here, we possibly have that a file was read in its entirety.
+                // What next? Proceed to executing the next file, or if there is 
+                // no such, go read from the standard input.
                 if (fileNames != null) {
                     if (fileNameIndex == fileNames.length) {
+                        // Once here, we have executed all files on the command
+                        // line. Switch to reading from stdin.
                         fileNames = null;
                         turnOffPrompt = false;
                         scanner = new Scanner(System.in);
@@ -96,13 +109,13 @@ public class App {
             String command = scanner.nextLine().trim();
 
             if (command.isEmpty()) {
-                // No text in the command line.
+                // No text in the command.
                 continue;
             }
 
             if (command.equals("quit")) {
                 if (fileNames != null) {
-                    // Print no 'Bye!'
+                    // Print no 'Bye!' whenever executing from files.
                     return;
                 }
                 
@@ -114,8 +127,10 @@ public class App {
                 continue;
             }
             
+            // Obtain whitespace delimited tokens.
             String[] words = command.split("\\s+");
 
+            // Choose the command by the first token.
             switch (words[0]) {
                 case "new": {
                     handleNew(words);
@@ -159,15 +174,25 @@ public class App {
             }
             
             if (handleQuery(command)) {
+                // Once here, the command was recognized as a query, so go 
+                // reiterate the REPL loop.
                 continue;
             }
             
+            // No match whatsoever, possibly the user wants to query a node 
+            // information.
             handlePrintNode(words);
         }
 
         System.out.println("Bye!");
     }
 
+    /**
+     * Checks that an identifier is a valid Java identifier.
+     * 
+     * @param identifier the identifier to check.
+     * @return {@code true} only if the input identifier is valid.
+     */
     private static boolean isValidIdentifier(String identifier) {
         if (identifier.isEmpty()) {
             return false;
@@ -186,6 +211,10 @@ public class App {
         return true;
     }
     
+    /**
+     * Handles the command starting with "new".
+     * @param words the token array.
+     */
     private void handleNew(String[] words) {
         if (words.length < 3) {
             error("Cannot parse 'new' command.");
@@ -231,12 +260,24 @@ public class App {
         }
         
         // Associate (or reassociate) the node with the probability value.
-        DirectedGraphNode newnode = new DirectedGraphNode(nodeName);
-        nodeMap.put(nodeName, newnode);
-        probabilityMap.put(newnode, probability);
-        stateModified = true;
+        DirectedGraphNode node;
+        
+        if (nodeMap.containsKey(nodeName)) {
+            node = nodeMap.get(nodeName);
+            probabilityMap.put(node, probability);
+        } else {
+            node = new DirectedGraphNode(nodeName);
+            nodeMap.put(nodeName, node);
+        }
+        
+        probabilityMap.put(node, probability);
     }
     
+    /**
+     * Handles the command for deleting a node.
+     * 
+     * @param words the array of tokens.
+     */
     private void handleDel(String[] words) {
         if (words.length < 2) {
             error("Missing the name of the node to delete.");
@@ -259,6 +300,11 @@ public class App {
         }
     }
     
+    /**
+     * Handles the command for creating arcs between nodes.
+     * 
+     * @param words the array of tokens.
+     */
     private void handleConnect(String[] words) {
         if (words.length < 4) {
             error("Missing required tokens.");
@@ -307,6 +353,11 @@ public class App {
         }
     }
     
+    /**
+     * Handles the command for removing arcs between nodes.
+     * 
+     * @param words the array of tokens.
+     */
     private void handleDisconnect(String[] words) {
         if (words.length < 4) {
             error("Missing required tokens.");
@@ -354,6 +405,12 @@ public class App {
         }
     }
     
+    /**
+     * Handles the command for querying the existence of arcs between particular
+     * nodes.
+     * 
+     * @param words the array of tokens.
+     */
     private void handleIs(String[] words) {
         if (words.length < 5
                 || !words[2].equals("connected")
@@ -391,6 +448,12 @@ public class App {
         System.out.println(tail.hasChild(head));
     }
     
+    /**
+     * Handles the command for listing the system states.
+     * 
+     * @param showList whether to show the actual state list after successful
+     *                 compilation.
+     */
     private void handleList(boolean showList) {
         if (stateModified) {
             List<DirectedGraphNode> network = new ArrayList<>(nodeMap.values());
@@ -437,13 +500,24 @@ public class App {
         }
     }
     
+    /**
+     * Handles the command for printing to the console.
+     * 
+     * @param command the command.
+     */
     private void handleEcho(String command) {
         String leftovers = command.substring(4).trim();
         System.out.println(leftovers);
     }
     
-    private boolean handleQuery(String line) {
-        if (!line.startsWith("p(")) {
+    /**
+     * Handles the commands for making queries on the network.
+     * 
+     * @param command the command.
+     * @return {@code true} if command prefix is that of query commands.
+     */
+    private boolean handleQuery(String command) {
+        if (!command.startsWith("p(")) {
             return false;
         }
         
@@ -457,12 +531,12 @@ public class App {
             }
         }
 
-        if (!line.endsWith(")")) {
+        if (!command.endsWith(")")) {
             error("No trailing \")\".");
             return true;
         }
 
-        String innerContent = line.substring(2, line.length() - 1).trim();
+        String innerContent = command.substring(2, command.length() - 1).trim();
         String[] parts = innerContent.split("\\|");
 
         if (parts.length != 2) {
@@ -541,6 +615,11 @@ public class App {
         return true;
     }
 
+    /**
+     * Handles the command for printing a node information.
+     * 
+     * @param words the array of tokens.
+     */
     private void handlePrintNode(String[] words) {
         if (words.length > 1 && !words[1].startsWith("#")) {
             error("Bad command.");
@@ -556,6 +635,7 @@ public class App {
         StringBuilder sb = new StringBuilder();
         int i = 0;
         
+        // Get parent node names.
         for (DirectedGraphNode parent : node.parents()) {
             sb.append(parent);
             
@@ -569,6 +649,7 @@ public class App {
         sb.delete(0, sb.length());
         i = 0;
         
+        // Get child node names.
         for (DirectedGraphNode child : node.children()) {
             sb.append(child);
             
@@ -585,6 +666,11 @@ public class App {
                 ">, children: <" + childListString + ">");
     }
     
+    /**
+     * Handles the command for printing the help information.
+     * 
+     * @param words the array of tokens.
+     */
     private void handleHelp(String[] words) {
         if (words.length > 3) {
             error("The syntax for \"help\" command is \"help [keywords]\".");
@@ -706,6 +792,12 @@ public class App {
         }
     }
     
+    /**
+     * Returns {@code true} if at least one of the input strings is "-h".
+     * 
+     * @param args the strings to check.
+     * @return {@code true} if at least one of the strings is "-h".
+     */
     private static boolean hasHelpFlag(String[] args) {
         for (String argument : args) {
             if (argument.trim().equals("-h")) {
@@ -714,66 +806,6 @@ public class App {
         }
         
         return false;
-    }
-    
-    private static void gen() {
-        int width = 8;
-        int depth = 9;
-        
-        long seed = System.currentTimeMillis();
-        Random random = new Random(seed);
-        List<List<DirectedGraphNode>> levels = new ArrayList<>();
-        int id = 0;
-        
-        for (int d = 0; d < depth; ++d) {
-            int w = Math.max(4, random.nextInt(width) + 1);
-            List<DirectedGraphNode> level = new ArrayList<>(w);
-            
-            for (int i = 0; i < w; ++i) {
-                level.add(new DirectedGraphNode("nde" + id));
-                id++;
-            }
-            
-            levels.add(level);
-        }
-        
-        int edges = 200;
-        
-        while (edges > 0) {
-            int levelA = random.nextInt(levels.size());
-            int levelB = random.nextInt(levels.size());
-            
-            if (levelA == levelB) {
-                continue;
-            }
-            
-            if (levelA > levelB) {
-                int tmp = levelA;
-                levelA = levelB;
-                levelB = tmp;
-            }
-            
-            List<DirectedGraphNode> listA = levels.get(levelA);
-            List<DirectedGraphNode> listB = levels.get(levelB);
-            
-            listA.get(random.nextInt(listA.size()))
-                    .addChild(listB.get(random.nextInt(listB.size())));
-            --edges;
-        }
-        
-        for (List<DirectedGraphNode> level : levels) {
-            for (DirectedGraphNode node : level) {
-                System.out.println("new " + node.toString() + " 0.5");
-            }
-        }
-        
-        for (List<DirectedGraphNode> level : levels) {
-            for (DirectedGraphNode node : level) {
-                for (DirectedGraphNode child : node.children()) {
-                    System.out.println("connect " + node + " to " + child);
-                }
-            }
-        }
     }
     
     public static void main(String[] args) {
