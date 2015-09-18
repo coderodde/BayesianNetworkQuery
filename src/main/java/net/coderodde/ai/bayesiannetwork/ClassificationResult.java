@@ -26,7 +26,7 @@ public class ClassificationResult {
 
         if (mapKeyIntersect(posterioriVariableMap, aprioriVariableMap)) {
             throw new IllegalArgumentException(
-                    "Posteriori and apriori variable list have a common " +
+                    "Posteriori and apriori variable lists have a common " +
                      "variable.");
         }
 
@@ -41,15 +41,15 @@ public class ClassificationResult {
         for (SystemState state : systemStateList) {
             if (state.stateContainsSubstate(aprioriVariableMap)) {
                 aprioriProbability += state.getProbability();
-
+                
                 if (state.stateContainsSubstate(combinedVariableMap)) {
                     posterioriProbability += state.getProbability();
                 }
             }
         }
 
-        return posterioriProbability == 0.0 ? 0.0 : posterioriProbability / 
-                                                    aprioriProbability;
+        return aprioriProbability == 0.0 ? 0.0 : posterioriProbability / 
+                                                 aprioriProbability;
     }
 
     /**

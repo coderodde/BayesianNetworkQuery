@@ -55,9 +55,7 @@ public class App {
                 
                 fileNameIndex++;
             } catch (FileNotFoundException ex) {
-                System.out.println(
-                        "ERROR: File \"" + fileNames[fileNameIndex] + 
-                        "\" not found.");
+                error("File \"" + fileNames[fileNameIndex] + "\" not found.");
                 return;
             }
             
@@ -86,10 +84,8 @@ public class App {
                                       new File(fileNames[fileNameIndex])));
                             fileNameIndex++;
                         } catch (FileNotFoundException ex) {
-                            System.out.println(
-                                    "ERROR: File \"" + 
-                                    fileNames[fileNameIndex] + 
-                                    "\" not found.");
+                            error("File \"" + fileNames[fileNameIndex] + 
+                                  "\" not found.");
                         }
                     }
                 } else {
@@ -142,7 +138,7 @@ public class App {
                 }
                 
                 case "list": {
-                    handleList();
+                    handleList(true);
                     continue;
                 }
                 
@@ -192,12 +188,12 @@ public class App {
     
     private void handleNew(String[] words) {
         if (words.length < 3) {
-            System.out.println("ERROR: cannot parse 'new' command.");
+            error("Cannot parse 'new' command.");
             return;
         }
         
         if (words.length >= 4 && !words[3].startsWith("#")) {
-            System.out.println("ERROR: Bad comment format.");
+            error("Bad comment format.");
             return;
         }
         
@@ -205,8 +201,7 @@ public class App {
         String probabilityString = words[2];
         
         if (!isValidIdentifier(nodeName)) {
-            System.out.println("ERROR: \"" + nodeName + "\" is a bad node " +
-                               "identifier.");
+            error("\"" + nodeName + "\" is a bad node identifier.");
             return;
         }
         
@@ -215,23 +210,23 @@ public class App {
         try {
             probability = Double.parseDouble(probabilityString);
         } catch (NumberFormatException ex) {
-            System.out.println("ERROR: Cannot parse \"" + probabilityString + 
-                               "\" as a probability value.");
+            error("Cannot parse \"" + probabilityString + 
+                  "\" as a probability value.");
             return;
         }
         
         if (Double.isNaN(probability)) {
-            System.out.println("ERROR: Input probability is NaN.");
+            error("Input probability is NaN.");
             return;
         }
         
         if (probability < 0.0) {
-            System.out.println("ERROR: Probability is too small.");
+            error("Probability is too small.");
             return;
         }
         
         if (probability > 1.0) {
-            System.out.println("ERROR: Probability is too large.");
+            error("Probability is too large.");
             return;
         }
         
@@ -244,16 +239,14 @@ public class App {
     
     private void handleDel(String[] words) {
         if (words.length < 2) {
-            System.out.println(
-                    "ERROR: Missing the name of the node to delete.");
+            error("Missing the name of the node to delete.");
             return;
         }
         
         String nodeName = words[1];
         
         if (!isValidIdentifier(nodeName)) {
-            System.out.println("ERROR: \"" + nodeName + "\" is not a valid " +
-                               "node name.");
+            error("\"" + nodeName + "\" is not a valid node name.");
             return;
         }
         
@@ -268,12 +261,12 @@ public class App {
     
     private void handleConnect(String[] words) {
         if (words.length < 4) {
-            System.out.println("ERROR: Missing required tokens.");
+            error("Missing required tokens.");
             return;
         }
         
         if (!words[2].equals("to")) {
-            System.out.println("ERROR: Format error.");
+            error("Format error.");
             return;
         }
         
@@ -281,31 +274,27 @@ public class App {
         String headNodeName = words[3];
         
         if (!isValidIdentifier(tailNodeName)) {
-            System.out.println("ERROR: Bad tail node name: \"" + tailNodeName +
-                               "\".");
+            error("Bad tail node name: \"" + tailNodeName + "\".");
             return;
         }
         
         if (!isValidIdentifier(headNodeName)) {
-            System.out.println("ERROR: Bad head node name: \"" + headNodeName +
-                               "\".");
+            error("Bad head node name: \"" + headNodeName + "\".");
             return;
         }
         
         if (!nodeMap.containsKey(tailNodeName)) {
-            System.out.println("ERROR: No node with name \"" + tailNodeName + 
-                               "\".");
+            error("No node with name \"" + tailNodeName + "\".");
             return;
         }
         
         if (!nodeMap.containsKey(headNodeName)) {
-            System.out.println("ERROR: No node with name \"" + headNodeName + 
-                               "\".");
+            error("No node with name \"" + headNodeName + "\".");
             return;
         }
         
         if (tailNodeName.equals(headNodeName)) {
-            System.out.println("ERROR: Self-loops not allowed.");
+            error("Self-loops not allowed.");
             return;
         }
         
@@ -320,12 +309,12 @@ public class App {
     
     private void handleDisconnect(String[] words) {
         if (words.length < 4) {
-            System.out.println("ERROR: Missing required tokens.");
+            error("Missing required tokens.");
             return;
         }
         
         if (!words[2].equals("from")) {
-            System.out.println("ERROR: Format error.");
+            error("Format error.");
             return;
         }
         
@@ -333,26 +322,22 @@ public class App {
         String headNodeName = words[3];
         
         if (!isValidIdentifier(tailNodeName)) {
-            System.out.println("ERROR: Bad tail node name: \"" + tailNodeName +
-                               "\".");
+            error("Bad tail node name: \"" + tailNodeName + "\".");
             return;
         }
         
         if (!isValidIdentifier(headNodeName)) {
-            System.out.println("ERROR: Bad head node name: \"" + headNodeName +
-                               "\".");
+            error("Bad head node name: \"" + headNodeName + "\".");
             return;
         }
         
         if (!nodeMap.containsKey(tailNodeName)) {
-            System.out.println("ERROR: No node with name \"" + tailNodeName + 
-                               "\".");
+            error("No node with name \"" + tailNodeName + "\".");
             return;
         }
         
         if (!nodeMap.containsKey(headNodeName)) {
-            System.out.println("ERROR: No node with name \"" + headNodeName + 
-                               "\".");
+            error("No node with name \"" + headNodeName + "\".");
             return;
         }
         
@@ -373,7 +358,7 @@ public class App {
         if (words.length < 5
                 || !words[2].equals("connected")
                 || !words[3].equals("to")) {
-            System.out.println("ERROR: Bad format.");
+            error("Bad format.");
             return;
         }
         
@@ -381,24 +366,22 @@ public class App {
         String headNodeName = words[4];
         
         if (!isValidIdentifier(tailNodeName)) {
-            System.out.println("ERROR: Bad tail node name \"" + tailNodeName +
-                               "\".");
+            error("Bad tail node name \"" + tailNodeName + "\".");
             return;
         }
         
         if (!isValidIdentifier(headNodeName)) {
-            System.out.println("ERROR: Bad head node name \"" + headNodeName +
-                               "\".");
+            error("Bad head node name \"" + headNodeName + "\".");
             return;
         }
         
         if (!nodeMap.containsKey(tailNodeName)) {
-            System.out.println("ERROR: No node \"" + tailNodeName + "\"");
+            error("No node \"" + tailNodeName + "\"");
             return;
         }
         
         if (!nodeMap.containsKey(headNodeName)) {
-            System.out.println("ERROR: No node \"" + headNodeName + "\"");
+            error("No node \"" + headNodeName + "\"");
             return;
         }
         
@@ -408,19 +391,19 @@ public class App {
         System.out.println(tail.hasChild(head));
     }
     
-    private void handleList() {
+    private void handleList(boolean showList) {
         if (stateModified) {
             List<DirectedGraphNode> network = new ArrayList<>(nodeMap.values());
             
             if (network.isEmpty()) {
-                System.out.println("ERROR: You have no nodes.");
+                error("You have no nodes.");
                 return;
             }
             
             List<DirectedGraphNode> component = findEntireGraph(network.get(0));
             
             if (component.size() < network.size()) {
-                System.out.println("ERROR: The graph is not connected.");
+                error("The graph is not connected.");
                 return; 
             }
             
@@ -442,14 +425,14 @@ public class App {
                 System.out.println("Number of possible states: " +
                                    result.getNumberOfStates());
             } catch (Exception ex) {
-                System.out.println("Error: " + ex.getMessage());
+                error(ex.getMessage());
                 return;
             }
         }
 
         if (result == null) {
-            System.out.println("Error: no network built yet.");
-        } else {
+            error("No network built yet.");
+        } else if (showList) {
             System.out.print(result);
         }
     }
@@ -463,18 +446,28 @@ public class App {
         if (!line.startsWith("p(")) {
             return false;
         }
+        
+        if (stateModified) {
+            handleList(false);
+            
+            if (stateModified) {
+                // If 'handleList' could not update the state, we have a problem
+                // with the graph: it is either disconnected or contains cycles.
+                return true;
+            }
+        }
 
         if (!line.endsWith(")")) {
-            System.out.println("ERROR: No trailing \")\".");
-            return false;
+            error("No trailing \")\".");
+            return true;
         }
 
         String innerContent = line.substring(2, line.length() - 1).trim();
         String[] parts = innerContent.split("\\|");
 
         if (parts.length != 2) {
-            System.out.println("ERROR: No single delimeter bar |");
-            return false;
+            error("No single delimeter bar |");
+            return true;
         }
 
         Map<DirectedGraphNode, Boolean> posterioriVariables = new HashMap<>();
@@ -497,8 +490,8 @@ public class App {
                 }
 
                 if (!nodeMap.containsKey(varName)) {
-                    System.out.println("ERROR: No node \"" + varName + "\".");
-                    return false;
+                    error("No node \"" + varName + "\".");
+                    return true;
                 } 
 
                 posterioriVariables.put(nodeMap.get(varName), !negate);
@@ -517,8 +510,8 @@ public class App {
                 }
 
                 if (!nodeMap.containsKey(varName)) {
-                    System.out.println("ERROR: No node \"" + varName + "\".");
-                    return false;
+                    error("No node \"" + varName + "\".");
+                    return true;
                 }
 
                 aprioriVariables.put(nodeMap.get(varName), !negate);
@@ -533,16 +526,16 @@ public class App {
                         stateModified = false;
                     }
                 } catch (Exception ex) {
-                    System.out.println("ERROR: " + ex.getMessage());
-                    return false;
+                    error(ex.getMessage());
+                    return true;
                 }
             }
             
             System.out.println(result.query(posterioriVariables, 
                                             aprioriVariables));
         } catch (Exception ex) {
-            System.out.println("Error: " + ex.getMessage());
-            return false;
+            error(ex.getMessage());
+            return true;
         }
         
         return true;
@@ -550,12 +543,12 @@ public class App {
 
     private void handlePrintNode(String[] words) {
         if (words.length > 1 && !words[1].startsWith("#")) {
-            System.out.println("ERROR: Bad command.");
+            error("Bad command.");
             return;
         }
         
         if (!nodeMap.containsKey(words[0])) {
-            System.out.println("\"" + words[0] + "\": no such node.");
+            error("\"" + words[0] + "\": no such node.");
             return;
         }
         
@@ -594,15 +587,12 @@ public class App {
     
     private void handleHelp(String[] words) {
         if (words.length > 3) {
-            System.out.println(
-                    "ERROR: The syntax for \"help\" command is " +
-                    "\"help [keywords]\".");
+            error("The syntax for \"help\" command is \"help [keywords]\".");
             return;
         } else if (words.length == 3) {
             if (!words[1].equals("is") || !words[2].equals("connected")) {
-                System.out.println(
-                        "ERROR: The syntax for \"help\" command is " +
-                        "\"help [keywords]\".");
+                error("The syntax for \"help\" command is " +
+                      "\"help [keywords]\".");
                 return;
             }
         }
@@ -799,5 +789,9 @@ public class App {
         } else {
             app.loop(args);
         }
+    }
+    
+    private static void error(String message) {
+        System.err.println("ERROR: " + message);
     }
 }

@@ -251,7 +251,7 @@ public class BayesNetworkClassifier {
     private static void checkNetworkIsAcyclic(List<DirectedGraphNode> network) {
         if (!Utils.graphIsAcyclic(network.get(0))) {
             throw new IllegalArgumentException(
-                    "The input network contains cycles.");
+                    "The current network contains cycles.");
         }
     }
 
