@@ -41,16 +41,21 @@ public class App {
      */
     private ClassificationResult result;
 
-    private void loop(String fileName) {
+    private void loop(String[] fileNames) {
         Scanner scanner;
         boolean turnOffPrompt;
+        int fileNameIndex = 0;
         
-        if (fileName != null) {
+        if (fileNames != null) {
             try {
-                scanner = new Scanner(new FileReader(new File(fileName)));
+                scanner = new Scanner(
+                          new FileReader(
+                          new File(fileNames[fileNameIndex++])));
+                
             } catch (FileNotFoundException ex) {
                 System.out.println(
-                        "ERROR: File \"" + fileName + "\" not found.");
+                        "ERROR: File \"" + fileNames[fileNameIndex] + 
+                        "\" not found.");
                 return;
             }
             
@@ -66,11 +71,25 @@ public class App {
             }
             
             if (!scanner.hasNextLine()) {
-                if (fileName != null) {
-                    fileName = null;
-                    turnOffPrompt = false;
-                    scanner = new Scanner(System.in);
-                    System.out.print("> ");
+                if (fileNames != null) {
+                    if (fileNameIndex == fileNames.length) {
+                        fileNames = null;
+                        turnOffPrompt = false;
+                        scanner = new Scanner(System.in);
+                        System.out.print("> ");
+                    } else {
+                        try {
+                            scanner = new Scanner(
+                                      new FileReader(
+                                      new File(fileNames[fileNameIndex])));
+                            fileNameIndex++;
+                        } catch (FileNotFoundException ex) {
+                            System.out.println(
+                                    "ERROR: File \"" + 
+                                    fileNames[fileNameIndex] + 
+                                    "\" not found.");
+                        }
+                    }
                 } else {
                     return;
                 }
@@ -84,7 +103,7 @@ public class App {
             }
 
             if (command.equals("quit")) {
-                if (fileName != null) {
+                if (fileNames != null) {
                     // Print no 'Bye!'
                     return;
                 }
@@ -681,12 +700,28 @@ public class App {
         }
     }
     
+    private static boolean hasHelpFlag(String[] args) {
+        for (String argument : args) {
+            if (argument.trim().equals("-h")) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     public static void main(String[] args) {
+        if (hasHelpFlag(args)) {
+            System.out.println("java -jar <PROGRAM.jar> [-h] [FILE_NAME]");
+            return;
+        }
+        
         App app = new App();
+        
         if (args.length == 0) {
             app.loop(null);
         } else {
-            app.loop(args[0]);
+            app.loop(args);
         }
     }
 }
