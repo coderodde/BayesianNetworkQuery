@@ -51,8 +51,9 @@ public class App {
             try {
                 scanner = new Scanner(
                           new FileReader(
-                          new File(fileNames[fileNameIndex++])));
+                          new File(fileNames[fileNameIndex])));
                 
+                fileNameIndex++;
             } catch (FileNotFoundException ex) {
                 System.out.println(
                         "ERROR: File \"" + fileNames[fileNameIndex] + 
