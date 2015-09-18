@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Scanner;
 import static net.coderodde.ai.bayesiannetwork.BayesNetworkClassifier.classify;
 import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
@@ -21,10 +20,31 @@ import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
 public class App {
 
     /**
+     * This interface defines a command handler.
+     */
+    private static interface CommandHandler {
+        
+        /**
+         * Handles a command. This method requires two arguments which are 
+         * basically the same, as some handlers are better implemented with a 
+         * particular command representation.
+         * 
+         * @param command the actual line containing the entire command.
+         * @param tokens  the whitespace delimited tokens of {@code command}.
+         */
+        void handle(String command, String[] tokens);
+    }
+    
+    /**
      * This map maps each node name to its internal representation.
      */
     private final Map<String, DirectedGraphNode> nodeMap = new HashMap<>();
 
+    /**
+     * Maps some command names to their respective handlers.
+     */
+    private final Map<String, CommandHandler> commandMap = new HashMap<>();
+    
     /**
      * This map maps each node to its probability.
      */
@@ -36,12 +56,22 @@ public class App {
      * compilation.
      */
     private boolean stateModified = true;
-    
+
     /**
      * Caches the last classification result for queries.
      */
     private ClassificationResult result;
 
+    private App() {
+        commandMap.put("new",        newHandler);
+        commandMap.put("del",        delHandler);
+        commandMap.put("connect",    connectHandler);
+        commandMap.put("disconnect", disconnectHandler);
+        commandMap.put("is",         isHandler);
+        commandMap.put("echo",       echoHandler);
+        commandMap.put("help",       helpHandler);
+    }
+    
     /**
      * This method implements the actual REPL (Read, Evaluate, Print, Loop).
      * 
@@ -54,30 +84,30 @@ public class App {
         Scanner scanner;
         boolean turnOffPrompt;
         int fileNameIndex = 0;
-        
-        if (fileNames != null) {
+
+        if (fileNames.length > 0) {
             try {
                 scanner = new Scanner(
                           new FileReader(
                           new File(fileNames[fileNameIndex])));
-                
+
                 fileNameIndex++;
             } catch (FileNotFoundException ex) {
                 error("File \"" + fileNames[fileNameIndex] + "\" not found.");
                 return;
             }
-            
+
             turnOffPrompt = true;
         } else {
             scanner = new Scanner(System.in);
             turnOffPrompt = false;
         }
- 
-        for (;;) {
+
+        while (true) {
             if (!turnOffPrompt) {
                 System.out.print("> ");
             }
-            
+
             if (!scanner.hasNextLine()) {
                 // Here, we possibly have that a file was read in its entirety.
                 // What next? Proceed to executing the next file, or if there is 
@@ -105,7 +135,7 @@ public class App {
                     return;
                 }
             }
-            
+
             String command = scanner.nextLine().trim();
 
             if (command.isEmpty()) {
@@ -118,7 +148,7 @@ public class App {
                     // Print no 'Bye!' whenever executing from files.
                     return;
                 }
-                
+
                 break;
             }
 
@@ -126,59 +156,26 @@ public class App {
                 // A comment line.
                 continue;
             }
-            
+
             // Obtain whitespace delimited tokens.
             String[] words = command.split("\\s+");
 
-            // Choose the command by the first token.
-            switch (words[0]) {
-                case "new": {
-                    handleNew(words);
-                    continue;
-                }
-                
-                case "del": {
-                    handleDel(words);
-                    continue;
-                }
-                
-                case "connect": {
-                    handleConnect(words);
-                    continue;
-                }
-                
-                case "disconnect": {
-                    handleDisconnect(words);
-                    continue;
-                }
-                
-                case "list": {
-                    handleList(true);
-                    continue;
-                }
-                
-                case "is": {
-                    handleIs(words);
-                    continue;
-                }
-                
-                case "echo": {
-                    handleEcho(command);
-                    continue;
-                }
-                
-                case "help": {
-                    handleHelp(words); 
-                    continue;
-                }
+            if (commandMap.containsKey(words[0])) {
+                commandMap.get(words[0]).handle(command, words);
+                continue;
             }
             
+            if (words[0].equals("list")) {
+                handleList(true);
+                continue;
+            }
+
             if (handleQuery(command)) {
                 // Once here, the command was recognized as a query, so go 
                 // reiterate the REPL loop.
                 continue;
             }
-            
+
             // No match whatsoever, possibly the user wants to query a node 
             // information.
             handlePrintNode(words);
@@ -197,20 +194,20 @@ public class App {
         if (identifier.isEmpty()) {
             return false;
         }
-        
+
         if (!Character.isJavaIdentifierStart(identifier.charAt(0))) {
             return false;
         }
-        
+
         for (int i = 1; i < identifier.length(); ++i) {
             if (!Character.isJavaIdentifierPart(identifier.charAt(i))) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     /**
      * Handles the command starting with "new".
      * @param words the token array.
@@ -220,22 +217,22 @@ public class App {
             error("Cannot parse 'new' command.");
             return;
         }
-        
+
         if (words.length >= 4 && !words[3].startsWith("#")) {
             error("Bad comment format.");
             return;
         }
-        
+
         String nodeName = words[1];
         String probabilityString = words[2];
-        
+
         if (!isValidIdentifier(nodeName)) {
             error("\"" + nodeName + "\" is a bad node identifier.");
             return;
         }
-        
+
         double probability;
-        
+
         try {
             probability = Double.parseDouble(probabilityString);
         } catch (NumberFormatException ex) {
@@ -243,25 +240,25 @@ public class App {
                   "\" as a probability value.");
             return;
         }
-        
+
         if (Double.isNaN(probability)) {
             error("Input probability is NaN.");
             return;
         }
-        
+
         if (probability < 0.0) {
             error("Probability is too small.");
             return;
         }
-        
+
         if (probability > 1.0) {
             error("Probability is too large.");
             return;
         }
-        
+
         // Associate (or reassociate) the node with the probability value.
         DirectedGraphNode node;
-        
+
         if (nodeMap.containsKey(nodeName)) {
             node = nodeMap.get(nodeName);
             probabilityMap.put(node, probability);
@@ -269,10 +266,10 @@ public class App {
             node = new DirectedGraphNode(nodeName);
             nodeMap.put(nodeName, node);
         }
-        
+
         probabilityMap.put(node, probability);
     }
-    
+
     /**
      * Handles the command for deleting a node.
      * 
@@ -283,23 +280,23 @@ public class App {
             error("Missing the name of the node to delete.");
             return;
         }
-        
+
         String nodeName = words[1];
-        
+
         if (!isValidIdentifier(nodeName)) {
             error("\"" + nodeName + "\" is not a valid node name.");
             return;
         }
-        
+
         DirectedGraphNode removed = nodeMap.remove(nodeName);
-        
+
         if (removed != null) {
             removed.clear();
             probabilityMap.remove(removed);
             stateModified = true;
         }
     }
-    
+
     /**
      * Handles the command for creating arcs between nodes.
      * 
@@ -310,49 +307,49 @@ public class App {
             error("Missing required tokens.");
             return;
         }
-        
+
         if (!words[2].equals("to")) {
             error("Format error.");
             return;
         }
-        
+
         String tailNodeName = words[1];
         String headNodeName = words[3];
-        
+
         if (!isValidIdentifier(tailNodeName)) {
             error("Bad tail node name: \"" + tailNodeName + "\".");
             return;
         }
-        
+
         if (!isValidIdentifier(headNodeName)) {
             error("Bad head node name: \"" + headNodeName + "\".");
             return;
         }
-        
+
         if (!nodeMap.containsKey(tailNodeName)) {
             error("No node with name \"" + tailNodeName + "\".");
             return;
         }
-        
+
         if (!nodeMap.containsKey(headNodeName)) {
             error("No node with name \"" + headNodeName + "\".");
             return;
         }
-        
+
         if (tailNodeName.equals(headNodeName)) {
             error("Self-loops not allowed.");
             return;
         }
-        
+
         DirectedGraphNode tail = nodeMap.get(tailNodeName);
         DirectedGraphNode head = nodeMap.get(headNodeName);
-        
+
         if (!tail.hasChild(head)) {
             tail.addChild(head);
             stateModified = true;
         }
     }
-    
+
     /**
      * Handles the command for removing arcs between nodes.
      * 
@@ -363,48 +360,48 @@ public class App {
             error("Missing required tokens.");
             return;
         }
-        
+
         if (!words[2].equals("from")) {
             error("Format error.");
             return;
         }
-        
+
         String tailNodeName = words[1];
         String headNodeName = words[3];
-        
+
         if (!isValidIdentifier(tailNodeName)) {
             error("Bad tail node name: \"" + tailNodeName + "\".");
             return;
         }
-        
+
         if (!isValidIdentifier(headNodeName)) {
             error("Bad head node name: \"" + headNodeName + "\".");
             return;
         }
-        
+
         if (!nodeMap.containsKey(tailNodeName)) {
             error("No node with name \"" + tailNodeName + "\".");
             return;
         }
-        
+
         if (!nodeMap.containsKey(headNodeName)) {
             error("No node with name \"" + headNodeName + "\".");
             return;
         }
-        
+
         if (tailNodeName.equals(headNodeName)) {
             return;
         }
-        
+
         DirectedGraphNode tail = nodeMap.get(tailNodeName);
         DirectedGraphNode head = nodeMap.get(headNodeName);
-        
+
         if (tail.hasChild(head)) {
             tail.removeChild(head);
             stateModified = true;
         }
     }
-    
+
     /**
      * Handles the command for querying the existence of arcs between particular
      * nodes.
@@ -418,36 +415,36 @@ public class App {
             error("Bad format.");
             return;
         }
-        
+
         String tailNodeName = words[1];
         String headNodeName = words[4];
-        
+
         if (!isValidIdentifier(tailNodeName)) {
             error("Bad tail node name \"" + tailNodeName + "\".");
             return;
         }
-        
+
         if (!isValidIdentifier(headNodeName)) {
             error("Bad head node name \"" + headNodeName + "\".");
             return;
         }
-        
+
         if (!nodeMap.containsKey(tailNodeName)) {
             error("No node \"" + tailNodeName + "\"");
             return;
         }
-        
+
         if (!nodeMap.containsKey(headNodeName)) {
             error("No node \"" + headNodeName + "\"");
             return;
         }
-        
+
         DirectedGraphNode tail = nodeMap.get(tailNodeName);
         DirectedGraphNode head = nodeMap.get(headNodeName);
-        
+
         System.out.println(tail.hasChild(head));
     }
-    
+
     /**
      * Handles the command for listing the system states.
      * 
@@ -457,26 +454,26 @@ public class App {
     private void handleList(boolean showList) {
         if (stateModified) {
             List<DirectedGraphNode> network = new ArrayList<>(nodeMap.values());
-            
+
             if (network.isEmpty()) {
                 error("You have no nodes.");
                 return;
             }
-            
+
             List<DirectedGraphNode> component = findEntireGraph(network.get(0));
-            
+
             if (component.size() < network.size()) {
                 error("The graph is not connected.");
                 return; 
             }
-            
+
             try {
                 long startTime = System.currentTimeMillis();
                 result = BayesNetworkClassifier.classify(network, 
                                                          probabilityMap);
                 long endTime = System.currentTimeMillis();
                 stateModified = false;
-                
+
                 System.out.println("Compiled the graph in " + 
                                   (endTime - startTime) + " milliseconds.");
                 if (Math.abs(1.0 - result.getSumOfProbabilities()) > 0.0001) {
@@ -484,7 +481,7 @@ public class App {
                     "The sum of probabilities over all possible states does " + 
                     "not sum to 1.0");
                 }
-                
+
                 System.out.println("Number of possible states: " +
                                    result.getNumberOfStates());
             } catch (Exception ex) {
@@ -499,7 +496,7 @@ public class App {
             System.out.print(result);
         }
     }
-    
+
     /**
      * Handles the command for printing to the console.
      * 
@@ -509,7 +506,7 @@ public class App {
         String leftovers = command.substring(4).trim();
         System.out.println(leftovers);
     }
-    
+
     /**
      * Handles the commands for making queries on the network.
      * 
@@ -520,10 +517,10 @@ public class App {
         if (!command.startsWith("p(")) {
             return false;
         }
-        
+
         if (stateModified) {
             handleList(false);
-            
+
             if (stateModified) {
                 // If 'handleList' could not update the state, we have a problem
                 // with the graph: it is either disconnected or contains cycles.
@@ -595,7 +592,7 @@ public class App {
                 try {
                     result = classify(new ArrayList<>(nodeMap.values()), 
                                       probabilityMap);
-                    
+
                     if (result != null) {
                         stateModified = false;
                     }
@@ -604,14 +601,14 @@ public class App {
                     return true;
                 }
             }
-            
+
             System.out.println(result.query(posterioriVariables, 
                                             aprioriVariables));
         } catch (Exception ex) {
             error(ex.getMessage());
             return true;
         }
-        
+
         return true;
     }
 
@@ -625,47 +622,47 @@ public class App {
             error("Bad command.");
             return;
         }
-        
+
         if (!nodeMap.containsKey(words[0])) {
             error("\"" + words[0] + "\": no such node.");
             return;
         }
-        
+
         DirectedGraphNode node = nodeMap.get(words[0]);
         StringBuilder sb = new StringBuilder();
         int i = 0;
-        
+
         // Get parent node names.
         for (DirectedGraphNode parent : node.parents()) {
             sb.append(parent);
-            
+
             if (i++ < node.parents().size() - 1) {
                 sb.append(", ");
             }
         }
-        
+
         String parentListString = sb.toString();
-        
+
         sb.delete(0, sb.length());
         i = 0;
-        
+
         // Get child node names.
         for (DirectedGraphNode child : node.children()) {
             sb.append(child);
-            
+
             if (i++ < node.children().size() - 1) {
                 sb.append(", ");
             }
         }
-        
+
         String childListString = sb.toString();
-        
+
         System.out.println(
                 "\"" + words[0] + "\", probability " + 
                 probabilityMap.get(node) + ", parents: <" + parentListString +
                 ">, children: <" + childListString + ">");
     }
-    
+
     /**
      * Handles the command for printing the help information.
      * 
@@ -682,7 +679,7 @@ public class App {
                 return;
             }
         }
-        
+
         if (words.length == 1) {
             System.out.println("  help new");
             System.out.println("  help del");
@@ -697,7 +694,7 @@ public class App {
             System.out.println("  help quit");
             return;
         }
-        
+
         switch (words[1]) {
             case "new": {
                 System.out.println("\"new <nodename> <probability>\"");
@@ -705,20 +702,20 @@ public class App {
                                    "and probability <probability>.");
                 break;
             }
-            
+
             case "del": {
                 System.out.println("\"del <nodename>\"");
                 System.out.println("Deletes the node with name <nodename>.");
                 break;
             }
-            
+
             case "connect": {
                 System.out.println("\"connect <tailnode> to <headnode>\"");
                 System.out.println("Creates an arc from <tailnode> to " +
                                    "<headnode>.");
                 break;
             }
-            
+
             case "is": {
                 if (words.length != 3) {
                     System.out.println(
@@ -730,35 +727,35 @@ public class App {
                     System.out.println("Asks whether <tailnode> has a child " +
                                        "<headnode>.");
                 }
-                    
+
                 break;
             }
-            
+
             case "disconnect": {
                 System.out.println("\"disconnect <tailnode> from <headnode>\"");
                 System.out.println("Removes an arc from <tailnode> to " +
                                    "<headnode>.");
                 break;
             }
-            
+
             case "list": {
                 System.out.println("\"list\"");
                 System.out.println("Lists all the possible system states.");
                 break;
             }
-            
+
             case "echo": {
                 System.out.println("\"echo [<text>]\"");
                 System.out.println("Prints <text> to the console.");
                 break;
             }
-                
+
             case "#": {
                 System.out.println("\"# [<text>]\"");
                 System.out.println("Starts a line comment.");
                 break;
             }
-            
+
             case "p": {
                 System.out.println(
                         "\"p(<posterioriVariables> | " +
@@ -771,19 +768,19 @@ public class App {
                 System.out.println(".");
                 break;
             }
-            
+
             case "<nodename>": {
                 System.out.println("\"<nodename>\"");
                 System.out.println("Print the node information.");
                 break;
             }
-            
+
             case "quit": {
                 System.out.println("\"quit\"");
                 System.out.println("Quits the program.");
                 break;
             }
-            
+
             default: {
                 System.out.println(
                         "ERROR: Unknown topic: \"" + words[1] + "\"");
@@ -791,7 +788,7 @@ public class App {
             }
         }
     }
-    
+
     /**
      * Returns {@code true} if at least one of the input strings is "-h".
      * 
@@ -804,26 +801,56 @@ public class App {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     public static void main(String[] args) {
         if (hasHelpFlag(args)) {
-            System.out.println("java -jar <PROGRAM.jar> [-h] [FILE_NAME]");
+            System.out.println(
+                    "java -jar <PROGRAM.jar> [-h] [FILE1 FILE2 ... FILEN]");
             return;
         }
-        
-        App app = new App();
-        
-        if (args.length == 0) {
-            app.loop(null);
-        } else {
-            app.loop(args);
-        }
+
+        new App().loop(args);
     }
-    
+
     private static void error(String message) {
         System.err.println("ERROR: " + message);
     }
+    
+    private final CommandHandler connectHandler = 
+            (String command, String[] tokens) -> {
+        handleConnect(tokens);
+    };
+    
+    private final CommandHandler delHandler = 
+            (String command, String[] tokens) -> {
+        handleDel(tokens);
+    };
+    
+    private final CommandHandler disconnectHandler = 
+            (String command, String[] tokens) -> {
+        handleDisconnect(tokens);
+    };
+    
+    private final CommandHandler echoHandler = 
+            (String command, String[] tokens) -> {
+        handleEcho(command);
+    };
+    
+    private final CommandHandler helpHandler = 
+            (String command, String[] tokens) -> {
+        handleHelp(tokens);
+    };
+    
+    private final CommandHandler isHandler = 
+            (String command, String[] tokens) -> {
+        handleIs(tokens);
+    };
+    
+    private final CommandHandler newHandler = 
+            (String command, String[] tokens) -> {
+        handleNew(tokens);
+    };
 }

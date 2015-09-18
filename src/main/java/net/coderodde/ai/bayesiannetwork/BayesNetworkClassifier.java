@@ -24,7 +24,7 @@ public class BayesNetworkClassifier {
     private final ClassificationResult result;
     private final Set<DirectedGraphNode> visited;
     private final List<DirectedGraphNode> tuple;
-    
+
     /**
      * Performs the actual classification task.
      * 
@@ -37,7 +37,7 @@ public class BayesNetworkClassifier {
                  ProbabilityMap<DirectedGraphNode> probabilityMap) {
         BayesNetworkClassifier bnc = 
                 new BayesNetworkClassifier(network, probabilityMap);
-        
+
         return bnc.classify();
     }
 
@@ -66,12 +66,12 @@ public class BayesNetworkClassifier {
         for (DirectedGraphNode node : network) {
             onoffMap.put(node, Boolean.FALSE);
         }
-        
+
         this.result = new ClassificationResult();
         this.visited = new HashSet<>(network.size());
         this.tuple = new ArrayList<>(network.size());
     }
-    
+
     /**
      * Implements the actual classification.
      * 
@@ -82,7 +82,7 @@ public class BayesNetworkClassifier {
         result.setNodeList(tuple);
         return result;
     }
-    
+
     /**
      * Returns the set of nodes that have no parents.
      * 
@@ -97,7 +97,7 @@ public class BayesNetworkClassifier {
                 set.add(node);
             }
         }
-        
+
         return set;
     }
 
@@ -297,7 +297,7 @@ public class BayesNetworkClassifier {
             }
         }
     }
-    
+
     private static boolean isIndependent(DirectedGraphNode node) {
         return node.parents().isEmpty();
     }

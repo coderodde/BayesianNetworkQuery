@@ -19,12 +19,12 @@ final class SystemState {
      * network that are not in this list are considered to have state "off". 
      */
     private final Set<DirectedGraphNode> onSet = new HashSet<>();
-    
+
     /**
      * The probability of this state.
      */
     private final double probability;
-    
+
     /**
      * The {@code ClassificationResult} this state belongs to.
      */
@@ -38,11 +38,11 @@ final class SystemState {
                 onSet.add(entry.getKey());
             }
         }
-        
+
         this.probability = probability;
         this.owner = result;
     }
-    
+
     boolean stateContainsSubstate(Map<DirectedGraphNode, Boolean> substate) {
         for (Map.Entry<DirectedGraphNode, Boolean> entry : 
                 substate.entrySet()) {
@@ -69,7 +69,7 @@ final class SystemState {
         StringBuilder sb = new StringBuilder("(");
         List<DirectedGraphNode> nodeList = owner.getNodeList();
         int i = 0;
-        
+
         for (DirectedGraphNode node : nodeList) {
             int fieldLength = node.toString().length();
             String field = String.format("%" + fieldLength + "s",

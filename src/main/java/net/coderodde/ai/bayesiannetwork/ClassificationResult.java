@@ -51,7 +51,7 @@ public class ClassificationResult {
         for (SystemState state : systemStateList) {
             if (state.stateContainsSubstate(aprioriVariableMap)) {
                 aprioriProbability += state.getProbability();
-                
+
                 if (state.stateContainsSubstate(combinedVariableMap)) {
                     posterioriProbability += state.getProbability();
                 }
@@ -61,11 +61,11 @@ public class ClassificationResult {
         return aprioriProbability == 0.0 ? 0.0 : posterioriProbability / 
                                                  aprioriProbability;
     }
-    
+
     void setNodeList(List<DirectedGraphNode> nodeList) {
         this.nodeList = nodeList;
     }
-    
+
     /**
      * This method returns the sum of probabilities over all system states, and
      * it <b>must</b> return <b>1.0</b> under any circumstances.
@@ -85,7 +85,7 @@ public class ClassificationResult {
     public int getNumberOfStates() {
         return systemStateList.size();
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("(");
