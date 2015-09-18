@@ -1,0 +1,4 @@
+new A 0.4
+new B 0.3
+connect A to B
+list

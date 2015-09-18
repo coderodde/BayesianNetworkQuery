@@ -1,5 +1,8 @@
 package net.coderodde.ai.bayesiannetwork;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,17 +40,45 @@ public class App {
      */
     private ClassificationResult result;
 
-    private void loop() {
-        Scanner scanner = new Scanner(System.in);
-
-        for (;;) {
-            System.out.print("> ");
-
-            if (!scanner.hasNextLine()) {
-                // Most probably the input was redirected, print no "Bye!".
+    private void loop(String fileName, boolean terminateAfterEOF) {
+        Scanner scanner;
+        boolean turnOffPrompt;
+        
+        if (fileName != null) {
+            try {
+                scanner = new Scanner(new FileReader(new File(fileName)));
+            } catch (FileNotFoundException ex) {
+                System.out.println(
+                        "ERROR: File \"" + fileName + "\" not found.");
                 return;
             }
-
+            
+            turnOffPrompt = true;
+        } else {
+            scanner = new Scanner(System.in);
+            turnOffPrompt = false;
+        }
+ 
+        for (;;) {
+            if (!turnOffPrompt) {
+                System.out.print("> ");
+            }
+            
+            if (!scanner.hasNextLine()) {
+                if (fileName != null) {
+                    if (terminateAfterEOF) {
+                        return;
+                    }
+                    
+                    fileName = null;
+                    turnOffPrompt = false;
+                    scanner = new Scanner(System.in);
+                    System.out.print("> ");
+                } else {
+                    return;
+                }
+            }
+            
             String command = scanner.nextLine().trim();
 
             if (command.isEmpty()) {
@@ -360,7 +391,7 @@ public class App {
         if (result == null) {
             System.out.println("Error: no network built yet.");
         } else {
-            System.out.println(result);
+            System.out.print(result);
         }
     }
     
@@ -499,6 +530,22 @@ public class App {
     
     public static void main(String[] args) {
         App app = new App();
-        app.loop();
+        
+        if (args.length == 1) {
+            if (args[0].equals("-i")) {
+                System.out.println(
+                        "ERROR: A file name expected after \"-i\".");
+                return;
+            }
+            
+            app.loop(args[0], true);
+        } else if (args.length == 2) {
+            if (!args[0].equals("-i")) {
+                System.out.println("ERROR: \"-i\" is expected.");
+                return;
+            }
+            
+            app.loop(args[1], false);
+        }
     }
 }
