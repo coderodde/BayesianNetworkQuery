@@ -205,8 +205,7 @@ public class App {
 
             if (command.equals("quit")) {
                 if (readingFromStdin) {
-                    // Exit the loop and print "Bye!".
-                    break;
+                    System.out.println("Bye!");
                 }
 
                 // Print no 'Bye!' whenever executing from files.
@@ -215,14 +214,12 @@ public class App {
 
             handleCommand(command);
         }
-
-        System.out.println("Bye!");
     }
 
     private void handleCommand(String command) {
         // Obtain whitespace delimited tokens.
         String[] words = command.split("\\s+");
-        
+
         if (commandMap.containsKey(words[0])) {
             commandMap.get(words[0]).handle(command, words);
         } else if (words[0].equals("list")) {
@@ -236,7 +233,7 @@ public class App {
             handlePrintNode(words);
         }
     }
-    
+
     /**
      * Checks that an identifier is a valid Java identifier.
      * 
@@ -566,7 +563,7 @@ public class App {
         loadVariableMap(String command) {
         String[] variableStrings = command.split(",");
         Map<DirectedGraphNode, Boolean> map = new HashMap<>();
-        
+
         for (int i = 0; i < variableStrings.length; ++i) {
             variableStrings[i] = variableStrings[i].trim();
             boolean negate = false;
@@ -586,10 +583,10 @@ public class App {
 
             map.put(nodeMap.get(varName), !negate);
         }
-        
+
         return map;
     }
-    
+
     /**
      * Handles the commands for making queries on the network.
      * 
