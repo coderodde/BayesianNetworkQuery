@@ -76,7 +76,7 @@ public class App {
     };
 
     /**
-     * This map maps each node name to its internal representation.
+     * This map maps each node name to its representation.
      */
     private final Map<String, DirectedGraphNode> nodeMap = new HashMap<>();
 
@@ -198,13 +198,14 @@ public class App {
 
             String command = read();
 
-            if (command.isEmpty()) {
-                // No text in the command.
+            if (command.isEmpty() || command.startsWith("#")) {
+                // No text in the command or a line comment.
                 continue;
             }
 
             if (command.equals("quit")) {
                 if (readingFromStdin) {
+                    // Exit the loop and print "Bye!".
                     break;
                 }
 
@@ -212,31 +213,30 @@ public class App {
                 return;
             }
 
-            if (command.startsWith("#")) {
-                // A comment line.
-                continue;
-            }
-
-            // Obtain whitespace delimited tokens.
-            String[] words = command.split("\\s+");
-
-            if (commandMap.containsKey(words[0])) {
-                commandMap.get(words[0]).handle(command, words);
-            } else if (words[0].equals("list")) {
-                handleList(true);
-            } else if (handleQuery(command)) {
-                // Once here, the command was recognized as a query. Do not go
-                // to 'handlePrintNode'.
-            } else {
-                // No match whatsoever, possibly the user wants to query a node 
-                // information.
-                handlePrintNode(words);
-            }
+            handleCommand(command);
         }
 
         System.out.println("Bye!");
     }
 
+    private void handleCommand(String command) {
+        // Obtain whitespace delimited tokens.
+        String[] words = command.split("\\s+");
+        
+        if (commandMap.containsKey(words[0])) {
+            commandMap.get(words[0]).handle(command, words);
+        } else if (words[0].equals("list")) {
+            handleList(true);
+        } else if (handleQuery(command)) {
+            // Once here, the command was recognized as a query. Do not go
+            // to 'handlePrintNode'.
+        } else {
+            // No match whatsoever, possibly the user wants to query a node 
+            // information.
+            handlePrintNode(words);
+        }
+    }
+    
     /**
      * Checks that an identifier is a valid Java identifier.
      * 
@@ -263,6 +263,7 @@ public class App {
 
     /**
      * Handles the command starting with "new".
+     * 
      * @param words the token array.
      */
     private void handleNew(String[] words) {
@@ -309,7 +310,8 @@ public class App {
             return;
         }
 
-        // Associate (or reassociate) the node with the probability value.
+        // Associate (or update probability) the node with the probability 
+        // value.
         DirectedGraphNode node;
 
         if (nodeMap.containsKey(nodeName)) {
@@ -560,6 +562,34 @@ public class App {
         System.out.println(leftovers);
     }
 
+    private Map<DirectedGraphNode, Boolean> 
+        loadVariableMap(String command) {
+        String[] variableStrings = command.split(",");
+        Map<DirectedGraphNode, Boolean> map = new HashMap<>();
+        
+        for (int i = 0; i < variableStrings.length; ++i) {
+            variableStrings[i] = variableStrings[i].trim();
+            boolean negate = false;
+            String varName;
+
+            if (variableStrings[i].startsWith("not ")) {
+                negate = true;
+                varName = variableStrings[i].substring(4);
+            } else {
+                varName = variableStrings[i];
+            }
+
+            if (!nodeMap.containsKey(varName)) {
+                error("No node \"" + varName + "\".");
+                return null;
+            } 
+
+            map.put(nodeMap.get(varName), !negate);
+        }
+        
+        return map;
+    }
+    
     /**
      * Handles the commands for making queries on the network.
      * 
@@ -594,53 +624,12 @@ public class App {
             return true;
         }
 
-        Map<DirectedGraphNode, Boolean> posterioriVariables = new HashMap<>();
-        Map<DirectedGraphNode, Boolean> aprioriVariables = new HashMap<>();
-
-        String[] posterioriVarStrings = parts[0].split(",");
-        String[] aprioriVarStrings = parts[1].split(",");
+        Map<DirectedGraphNode, Boolean> posterioriVariables =
+                loadVariableMap(parts[0]);
+        Map<DirectedGraphNode, Boolean> aprioriVariables = 
+                loadVariableMap(parts[1]);
 
         try {
-            for (int i = 0; i < posterioriVarStrings.length; ++i) {
-                posterioriVarStrings[i] = posterioriVarStrings[i].trim();
-                boolean negate = false;
-                String varName;
-
-                if (posterioriVarStrings[i].startsWith("not ")) {
-                    negate = true;
-                    varName = posterioriVarStrings[i].substring(4);
-                } else {
-                    varName = posterioriVarStrings[i];
-                }
-
-                if (!nodeMap.containsKey(varName)) {
-                    error("No node \"" + varName + "\".");
-                    return true;
-                } 
-
-                posterioriVariables.put(nodeMap.get(varName), !negate);
-            }
-
-            for (int i = 0; i < aprioriVarStrings.length; ++i) {
-                aprioriVarStrings[i] = aprioriVarStrings[i].trim();
-                boolean negate = false;
-                String varName;
-
-                if (aprioriVarStrings[i].startsWith("not ")) {
-                    negate = true;
-                    varName = aprioriVarStrings[i].substring(4);
-                } else {
-                    varName = aprioriVarStrings[i];
-                }
-
-                if (!nodeMap.containsKey(varName)) {
-                    error("No node \"" + varName + "\".");
-                    return true;
-                }
-
-                aprioriVariables.put(nodeMap.get(varName), !negate);
-            }
-
             if (stateModified) {
                 try {
                     result = classify(new ArrayList<>(nodeMap.values()), 
