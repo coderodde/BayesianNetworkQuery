@@ -118,32 +118,19 @@ public class BayesNetworkClassifier {
         return false;
     }
 
-    /**
-     * Implements the actual compilation from a Bayesian network to the list of
-     * system states. This algorithm builds a tree whose leafs are all possible 
-     * system states, yet it prunes the search by skipping the nodes whose state
-     * cannot vary, thus implementing "branch-and-bound" technique.
-     * 
-     * @param levelSet    the set of nodes on current level.
-     * @param probability the accumulated probability.
-     */
-    private void classify(Set<DirectedGraphNode> levelSet,
-                          double probability) {
-        if (levelSet.isEmpty()) {
-            // End the recursion, record the tuple and its probability as a new
-            // system state.
-            Map<DirectedGraphNode, Boolean> variableMap = new HashMap<>();
+    private void inferSystemState(double probability) {
+        Map<DirectedGraphNode, Boolean> variableMap = new HashMap<>();
 
-            for (DirectedGraphNode node : tuple) {
-                variableMap.put(node, onoffMap.get(node));
-            }
-
-            result.addSystemState(new SystemState(variableMap, 
-                                                  result, 
-                                                  probability));
-            return;
+        for (DirectedGraphNode node : tuple) {
+            variableMap.put(node, onoffMap.get(node));
         }
 
+        result.addSystemState(new SystemState(variableMap, 
+                                              result, 
+                                              probability));
+    }
+    
+    private void pruneLevelSet(Set<DirectedGraphNode> levelSet) {
         Iterator<DirectedGraphNode> iterator = levelSet.iterator();
 
         // Remove the nodes from 'levelSet' whose some parents are not yet
@@ -157,12 +144,12 @@ public class BayesNetworkClassifier {
                 }
             }
         }
-
-        // Set of nodes whose on/off status cannot vary, namely the nodes whose
-        // probability is 0 or whose some parents are off, or nodes with no off
-        // parents and probability 1.0.
+    }
+    
+    private Set<DirectedGraphNode> 
+        constructSkipSet(Set<DirectedGraphNode> levelSet) {
         Set<DirectedGraphNode> skipSet = new HashSet<>(levelSet.size());
-
+        
         for (DirectedGraphNode node : levelSet) {
             if (nodeHasOffParent(node) || probabilityMap.get(node) == 0.0) {
                 onoffMap.put(node, Boolean.FALSE);
@@ -172,7 +159,13 @@ public class BayesNetworkClassifier {
                 skipSet.add(node);
             }
         }
-
+        
+        return skipSet;
+    }
+    
+    private DirectedGraphNode[] 
+        constructVaryingNodeArray(Set<DirectedGraphNode> levelSet,
+                                  Set<DirectedGraphNode> skipSet) {
         DirectedGraphNode[] nodeArray = new DirectedGraphNode[levelSet.size() -
                                                                skipSet.size()];
 
@@ -191,16 +184,34 @@ public class BayesNetworkClassifier {
                 tuple.add(node);
             }
         }
-
+        
+        return nodeArray;
+    }
+        
+    private Set<DirectedGraphNode> 
+        createNextLevelSet(Set<DirectedGraphNode> levelSet) {
         Set<DirectedGraphNode> nextLevelSet = new TreeSet<>();
-
+        
         // Compute the next node level.
         for (DirectedGraphNode node : levelSet) {
             for (DirectedGraphNode child : node.children()) {
                 nextLevelSet.add(child);
             }
         }
-
+        
+        return nextLevelSet;
+    }
+        
+    private void cleanUpLevel(Set<DirectedGraphNode> levelSet) {
+        for (DirectedGraphNode node : levelSet) {
+            visited.remove(node);
+        }
+    }
+        
+    private void recur(DirectedGraphNode[] nodeArray, 
+                       Set<DirectedGraphNode> nextLevelSet, 
+                       double probability) {
+        // Recur.
         boolean doInit = true;
 
         // For each combination of variable state nodes, recur.
@@ -208,13 +219,48 @@ public class BayesNetworkClassifier {
             doInit = false;
 
             classify(nextLevelSet,
-                         probability * computeProbability(nodeArray));
+                     probability * computeProbability(nodeArray));
         }
+    }
+    
+    /**
+     * Implements the actual compilation from a Bayesian network to the list of
+     * system states. This algorithm builds a tree whose leafs are all possible 
+     * system states, yet it prunes the search by skipping the nodes whose state
+     * cannot vary, thus implementing "branch-and-bound" technique.
+     * 
+     * @param levelSet    the set of nodes on current level.
+     * @param probability the accumulated probability.
+     */
+    private void classify(Set<DirectedGraphNode> levelSet,
+                          double probability) {
+        if (levelSet.isEmpty()) {
+            // End the recursion, record the tuple and its probability as a new
+            // system state.
+            inferSystemState(probability);
+            return;
+        }
+        
+        // Remove the nodes from 'levelSet' whose some parents are not yet
+        // processed. We will get to them in deeper recursion depth.
+        pruneLevelSet(levelSet);
 
+        // Set of nodes whose on/off status cannot vary, namely the nodes whose
+        // probability is 0 or whose some parents are off, or nodes with no off
+        // parents and probability 1.0.
+        Set<DirectedGraphNode> skipSet = constructSkipSet(levelSet);
+
+        // Create the array of nodes whose state may vary.
+        DirectedGraphNode[] nodeArray = constructVaryingNodeArray(levelSet,
+                                                                  skipSet);
+        // Find out the next level set.
+        Set<DirectedGraphNode> nextLevelSet = createNextLevelSet(levelSet);
+
+        // For each combination of variable state nodes, recur.
+        recur(nodeArray, nextLevelSet, probability);
+        
         // Clean up the state for further recursion.
-        for (DirectedGraphNode node : levelSet) {
-            visited.remove(node);
-        }
+        cleanUpLevel(levelSet);        
     }
 
     /**
