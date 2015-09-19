@@ -37,19 +37,25 @@ public class Utils {
         while (!queue.isEmpty()) {
             DirectedGraphNode current = queue.removeFirst();
 
-            for (DirectedGraphNode child : current.children()) {
-                if (!visited.contains(child)) {
-                    visited.add(child);
-                    queue.addLast(child);
-                }
-            }
+            current.children()
+                   .stream()
+                   .filter((child) -> (!visited.contains(child)))
+                   .map((child) -> {
+                visited.add(child);
+                return child;
+            }).forEach((child) -> {
+                queue.addLast(child);
+            });
 
-            for (DirectedGraphNode parent : current.parents()) {
-                if (!visited.contains(parent)) {
-                    visited.add(parent);
-                    queue.addLast(parent);
-                }
-            }
+            current.parents()
+                   .stream()
+                   .filter((parent) -> (!visited.contains(parent)))
+                   .map((parent) -> {
+                visited.add(parent);
+                return parent;
+            }).forEach((parent) -> {
+                queue.addLast(parent);
+            });
         }
 
         return new ArrayList<>(visited);
@@ -65,14 +71,12 @@ public class Utils {
         List<DirectedGraphNode> nodeList = findEntireGraph(start);
         Map<DirectedGraphNode, NodeColor> map = new HashMap<>();
 
-        for (DirectedGraphNode node : nodeList) {
+        nodeList.stream().forEach((node) -> {
             map.put(node, NodeColor.WHITE);
-        }
+        });
 
-        for (DirectedGraphNode node : nodeList) {
-            if (dfs(node, map)) {
-                return false;
-            }
+        if (!nodeList.stream().noneMatch((node) -> (dfs(node, map)))) {
+            return false;
         }
 
         return true;

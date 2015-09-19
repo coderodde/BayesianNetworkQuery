@@ -91,13 +91,8 @@ public class BayesNetworkClassifier {
      */
     private Set<DirectedGraphNode> getRootSet(List<DirectedGraphNode> network) {
         Set<DirectedGraphNode> set = new TreeSet<>();
-
-        for (DirectedGraphNode node : network) {
-            if (isIndependent(node)) {
-                set.add(node);
-            }
-        }
-
+        network.stream().filter((node) -> (isIndependent(node)))
+                        .forEach((node) -> { set.add(node); });
         return set;
     }
 
@@ -109,10 +104,11 @@ public class BayesNetworkClassifier {
      * @return {@code true} if the input node has a turned off parent.
      */
     private boolean nodeHasOffParent(DirectedGraphNode node) {
-        for (DirectedGraphNode parent : node.parents()) {
-            if (onoffMap.get(parent).equals(Boolean.FALSE)) {
-                return true;
-            }
+        if (node.parents()
+                .stream()
+                .anyMatch((parent) -> (onoffMap.get(parent)
+                                               .equals(Boolean.FALSE)))) {
+            return true;
         }
 
         return false;
@@ -121,9 +117,9 @@ public class BayesNetworkClassifier {
     private void inferSystemState(double probability) {
         Map<DirectedGraphNode, Boolean> variableMap = new HashMap<>();
 
-        for (DirectedGraphNode node : tuple) {
+        tuple.stream().forEach((node) -> {
             variableMap.put(node, onoffMap.get(node));
-        }
+        });
 
         result.addSystemState(new SystemState(variableMap, 
                                               result, 
@@ -150,7 +146,7 @@ public class BayesNetworkClassifier {
         constructSkipSet(Set<DirectedGraphNode> levelSet) {
         Set<DirectedGraphNode> skipSet = new HashSet<>(levelSet.size());
         
-        for (DirectedGraphNode node : levelSet) {
+        levelSet.stream().forEach((node) -> {
             if (nodeHasOffParent(node) || probabilityMap.get(node) == 0.0) {
                 onoffMap.put(node, Boolean.FALSE);
                 skipSet.add(node);
@@ -158,7 +154,7 @@ public class BayesNetworkClassifier {
                 onoffMap.put(node, Boolean.TRUE);
                 skipSet.add(node);
             }
-        }
+        });
         
         return skipSet;
     }
@@ -193,19 +189,19 @@ public class BayesNetworkClassifier {
         Set<DirectedGraphNode> nextLevelSet = new TreeSet<>();
         
         // Compute the next node level.
-        for (DirectedGraphNode node : levelSet) {
-            for (DirectedGraphNode child : node.children()) {
+        levelSet.stream().forEach((node) -> {
+            node.children().stream().forEach((child) -> {
                 nextLevelSet.add(child);
-            }
-        }
+            });
+        });
         
         return nextLevelSet;
     }
         
     private void cleanUpLevel(Set<DirectedGraphNode> levelSet) {
-        for (DirectedGraphNode node : levelSet) {
+        levelSet.stream().forEach((node) -> {
             visited.remove(node);
-        }
+        });
     }
         
     private void recur(DirectedGraphNode[] nodeArray, 

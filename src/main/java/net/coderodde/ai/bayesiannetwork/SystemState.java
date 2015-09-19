@@ -33,11 +33,12 @@ final class SystemState {
     SystemState(Map<DirectedGraphNode, Boolean> map, 
                 ClassificationResult result,
                 double probability) {
-        for (Map.Entry<DirectedGraphNode, Boolean> entry : map.entrySet()) {
-            if (entry.getValue().equals(Boolean.TRUE)) {
-                onSet.add(entry.getKey());
-            }
-        }
+        map.entrySet()
+           .stream()
+           .filter((entry) -> (entry.getValue().equals(Boolean.TRUE)))
+           .forEach((entry) -> {
+            onSet.add(entry.getKey());
+        });
 
         this.probability = probability;
         this.owner = result;

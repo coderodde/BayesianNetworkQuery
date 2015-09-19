@@ -45,13 +45,13 @@
         }
 
         public void clear() {
-            for (DirectedGraphNode child : children) {
+            children.stream().forEach((child) -> {
                 child.parents.remove(this);
-            }
+            });
 
-            for (DirectedGraphNode parent : parents) {
+            parents.stream().forEach((parent) -> {
                 parent.children.remove(this);
-            }
+            });
 
             children.clear();
             parents.clear();

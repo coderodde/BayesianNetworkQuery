@@ -75,9 +75,11 @@ public class ClassificationResult {
     public double getSumOfProbabilities() {
         double probability = 0.0;
 
-        for (SystemState state : systemStateList) {
-            probability += state.getProbability();
-        }
+        probability = systemStateList.stream()
+                                      .map((state) -> state.getProbability())
+                                      .reduce(probability, 
+                                             (accumulator, _item) -> 
+                                                     accumulator + _item);
 
         return probability;
     }
@@ -103,9 +105,9 @@ public class ClassificationResult {
 
         sb.append(")\n");
 
-        for (SystemState state : systemStateList) {
+        systemStateList.stream().forEach((state) -> {
             sb.append(state).append('\n');
-        }
+        });
 
         return sb.toString();
     }
@@ -140,12 +142,8 @@ public class ClassificationResult {
             largerMap  = map1;
         }
 
-        for (K key : smallerMap.keySet()) {
-            if (largerMap.containsKey(key)) {
-                return true;
-            }
-        }
-
-        return false;
+        return smallerMap.keySet()
+                         .stream()
+                         .anyMatch((key) -> (largerMap.containsKey(key)));
     }
 }

@@ -15,13 +15,14 @@ import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
  * This class implements a console program for working on Bayes networks.
  * 
  * @author Rodion "rodde" Efremov
- * @version 1.61 (Sep 18, 2015)
+ * @version 1.618 (Sep 19, 2015)
  */
 public class App {
 
     /**
      * This interface defines a command handler.
      */
+    @FunctionalInterface
     private static interface CommandHandler {
 
         /**
@@ -219,14 +220,9 @@ public class App {
             // Obtain whitespace delimited tokens.
             String[] words = command.split("\\s+");
 
-            // Try find a hanlder.
             if (commandMap.containsKey(words[0])) {
                 commandMap.get(words[0]).handle(command, words);
-                continue;
-            }
-
-            // Handle listing of states.
-            if (words[0].equals("list")) {
+            } else if (words[0].equals("list")) {
                 handleList(true);
             } else if (handleQuery(command)) {
                 // Once here, the command was recognized as a query. Do not go
