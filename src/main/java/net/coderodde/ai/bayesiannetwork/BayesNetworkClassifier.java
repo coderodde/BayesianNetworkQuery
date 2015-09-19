@@ -18,12 +18,12 @@ import java.util.TreeSet;
  */
 public class BayesNetworkClassifier {
 
-    private final List<DirectedGraphNode> network;
+    private final List<DirectedGraphNode>           network;
     private final ProbabilityMap<DirectedGraphNode> probabilityMap;
-    private final Map<DirectedGraphNode, Boolean> onoffMap;
-    private final ClassificationResult result;
-    private final Set<DirectedGraphNode> visited;
-    private final List<DirectedGraphNode> tuple;
+    private final Map<DirectedGraphNode, Boolean>   onoffMap;
+    private final ClassificationResult              result;
+    private final Set<DirectedGraphNode>            visited;
+    private final List<DirectedGraphNode>           tuple;
 
     /**
      * Performs the actual classification task.

@@ -35,6 +35,45 @@ public class App {
         void handle(String command, String[] tokens);
     }
     
+    private static void error(String message) {
+        System.err.println("ERROR: " + message);
+    }
+    
+    private final CommandHandler connectHandler = 
+            (String command, String[] tokens) -> {
+        handleConnect(tokens);
+    };
+    
+    private final CommandHandler delHandler = 
+            (String command, String[] tokens) -> {
+        handleDel(tokens);
+    };
+    
+    private final CommandHandler disconnectHandler = 
+            (String command, String[] tokens) -> {
+        handleDisconnect(tokens);
+    };
+    
+    private final CommandHandler echoHandler = 
+            (String command, String[] tokens) -> {
+        handleEcho(command);
+    };
+    
+    private final CommandHandler helpHandler = 
+            (String command, String[] tokens) -> {
+        handleHelp(tokens);
+    };
+    
+    private final CommandHandler isHandler = 
+            (String command, String[] tokens) -> {
+        handleIs(tokens);
+    };
+    
+    private final CommandHandler newHandler = 
+            (String command, String[] tokens) -> {
+        handleNew(tokens);
+    };
+    
     /**
      * This map maps each node name to its internal representation.
      */
@@ -61,8 +100,35 @@ public class App {
      * Caches the last classification result for queries.
      */
     private ClassificationResult result;
+    
+    /**
+     * The scanner for reading the commands.
+     */
+    private Scanner scanner;
+    
+    /**
+     * The array of file names to execute.
+     */
+    private String[] fileNameArray;
+    
+    /**
+     * The index of the file currently executed.
+     */
+    private int fileNameIndex;
 
-    private App() {
+    /**
+     * If set to {@code true} the command prompt "> " will be printed.
+     */
+    private boolean allowPrompt;
+    
+    /**
+     * If set to {@code true}, we are reading from standard input.
+     */
+    private boolean readingFromStdin;
+    
+    private App(String[] fileNameArray) {
+        this.fileNameArray = fileNameArray;
+        
         commandMap.put("new",        newHandler);
         commandMap.put("del",        delHandler);
         commandMap.put("connect",    connectHandler);
@@ -70,73 +136,66 @@ public class App {
         commandMap.put("is",         isHandler);
         commandMap.put("echo",       echoHandler);
         commandMap.put("help",       helpHandler);
+        
+        if (fileNameArray.length > 0) {
+            String fileName = fileNameArray[0];
+            
+            try {
+                scanner = new Scanner(new FileReader(new File(fileName)));
+                fileNameIndex++;
+                readingFromStdin = false;
+            } catch (FileNotFoundException ex) {
+                System.out.println(
+                        "ERROR: File \"" + fileName + "\" not found.");
+                System.exit(1);
+            }
+            
+            allowPrompt = false;
+        } else {
+            scanner = new Scanner(System.in);
+            allowPrompt = true;
+            readingFromStdin = true;
+        }
+    }
+    
+    private boolean promptAllowed() {
+        return allowPrompt;
+    }
+    
+    private String read() {
+        if (!scanner.hasNextLine()) {
+            if (fileNameIndex == fileNameArray.length) {
+                scanner = new Scanner(System.in);
+                allowPrompt = true;
+                readingFromStdin = true;
+                System.out.print("> ");
+            } else {
+                try {
+                    scanner = new Scanner(
+                              new FileReader(
+                              new File(fileNameArray[fileNameIndex])));
+                    ++fileNameIndex;
+                } catch (FileNotFoundException ex) {
+                    error("File \"" + fileNameArray[fileNameIndex] + 
+                          "\" is not found.");
+                    System.exit(1);
+                }
+            }
+        } 
+        
+        return scanner.nextLine();
     }
     
     /**
      * This method implements the actual REPL (Read, Evaluate, Print, Loop).
-     * 
-     * @param fileNames the array containing the names of the files to execute.
-     *                  This array may be null, in which case the program reads
-     *                  from the console. If array is not {@code null}, executes
-     *                  the files in the order they appear in the array.
      */
-    private void loop(String[] fileNames) {
-        Scanner scanner;
-        boolean turnOffPrompt;
-        int fileNameIndex = 0;
-
-        if (fileNames.length > 0) {
-            try {
-                scanner = new Scanner(
-                          new FileReader(
-                          new File(fileNames[fileNameIndex])));
-
-                fileNameIndex++;
-            } catch (FileNotFoundException ex) {
-                error("File \"" + fileNames[fileNameIndex] + "\" not found.");
-                return;
-            }
-
-            turnOffPrompt = true;
-        } else {
-            scanner = new Scanner(System.in);
-            turnOffPrompt = false;
-        }
-
+    private void loop() {
         while (true) {
-            if (!turnOffPrompt) {
+            if (promptAllowed()) {
                 System.out.print("> ");
             }
 
-            if (!scanner.hasNextLine()) {
-                // Here, we possibly have that a file was read in its entirety.
-                // What next? Proceed to executing the next file, or if there is 
-                // no such, go read from the standard input.
-                if (fileNames != null) {
-                    if (fileNameIndex == fileNames.length) {
-                        // Once here, we have executed all files on the command
-                        // line. Switch to reading from stdin.
-                        fileNames = null;
-                        turnOffPrompt = false;
-                        scanner = new Scanner(System.in);
-                        System.out.print("> ");
-                    } else {
-                        try {
-                            scanner = new Scanner(
-                                      new FileReader(
-                                      new File(fileNames[fileNameIndex])));
-                            fileNameIndex++;
-                        } catch (FileNotFoundException ex) {
-                            error("File \"" + fileNames[fileNameIndex] + 
-                                  "\" not found.");
-                        }
-                    }
-                } else {
-                    return;
-                }
-            }
-
-            String command = scanner.nextLine().trim();
+            String command = read();
 
             if (command.isEmpty()) {
                 // No text in the command.
@@ -144,12 +203,12 @@ public class App {
             }
 
             if (command.equals("quit")) {
-                if (fileNames != null) {
-                    // Print no 'Bye!' whenever executing from files.
-                    return;
+                if (readingFromStdin) {
+                    break;
                 }
-
-                break;
+                
+                // Print no 'Bye!' whenever executing from files.
+                return;
             }
 
             if (command.startsWith("#")) {
@@ -160,11 +219,13 @@ public class App {
             // Obtain whitespace delimited tokens.
             String[] words = command.split("\\s+");
 
+            // Try find a hanlder.
             if (commandMap.containsKey(words[0])) {
                 commandMap.get(words[0]).handle(command, words);
                 continue;
             }
             
+            // Handle listing of states.
             if (words[0].equals("list")) {
                 handleList(true);
                 continue;
@@ -812,45 +873,6 @@ public class App {
             return;
         }
 
-        new App().loop(args);
+        new App(args).loop();
     }
-
-    private static void error(String message) {
-        System.err.println("ERROR: " + message);
-    }
-    
-    private final CommandHandler connectHandler = 
-            (String command, String[] tokens) -> {
-        handleConnect(tokens);
-    };
-    
-    private final CommandHandler delHandler = 
-            (String command, String[] tokens) -> {
-        handleDel(tokens);
-    };
-    
-    private final CommandHandler disconnectHandler = 
-            (String command, String[] tokens) -> {
-        handleDisconnect(tokens);
-    };
-    
-    private final CommandHandler echoHandler = 
-            (String command, String[] tokens) -> {
-        handleEcho(command);
-    };
-    
-    private final CommandHandler helpHandler = 
-            (String command, String[] tokens) -> {
-        handleHelp(tokens);
-    };
-    
-    private final CommandHandler isHandler = 
-            (String command, String[] tokens) -> {
-        handleIs(tokens);
-    };
-    
-    private final CommandHandler newHandler = 
-            (String command, String[] tokens) -> {
-        handleNew(tokens);
-    };
 }
