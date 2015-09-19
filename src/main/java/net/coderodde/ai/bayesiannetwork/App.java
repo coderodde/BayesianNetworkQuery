@@ -23,7 +23,7 @@ public class App {
      * This interface defines a command handler.
      */
     private static interface CommandHandler {
-        
+
         /**
          * Handles a command. This method requires two arguments which are 
          * basically the same, as some handlers are better implemented with a 
@@ -34,46 +34,46 @@ public class App {
          */
         void handle(String command, String[] tokens);
     }
-    
+
     private static void error(String message) {
         System.err.println("ERROR: " + message);
     }
-    
+
     private final CommandHandler connectHandler = 
             (String command, String[] tokens) -> {
         handleConnect(tokens);
     };
-    
+
     private final CommandHandler delHandler = 
             (String command, String[] tokens) -> {
         handleDel(tokens);
     };
-    
+
     private final CommandHandler disconnectHandler = 
             (String command, String[] tokens) -> {
         handleDisconnect(tokens);
     };
-    
+
     private final CommandHandler echoHandler = 
             (String command, String[] tokens) -> {
         handleEcho(command);
     };
-    
+
     private final CommandHandler helpHandler = 
             (String command, String[] tokens) -> {
         handleHelp(tokens);
     };
-    
+
     private final CommandHandler isHandler = 
             (String command, String[] tokens) -> {
         handleIs(tokens);
     };
-    
+
     private final CommandHandler newHandler = 
             (String command, String[] tokens) -> {
         handleNew(tokens);
     };
-    
+
     /**
      * This map maps each node name to its internal representation.
      */
@@ -83,7 +83,7 @@ public class App {
      * Maps some command names to their respective handlers.
      */
     private final Map<String, CommandHandler> commandMap = new HashMap<>();
-    
+
     /**
      * This map maps each node to its probability.
      */
@@ -100,17 +100,17 @@ public class App {
      * Caches the last classification result for queries.
      */
     private ClassificationResult result;
-    
+
     /**
      * The scanner for reading the commands.
      */
     private Scanner scanner;
-    
+
     /**
      * The array of file names to execute.
      */
     private String[] fileNameArray;
-    
+
     /**
      * The index of the file currently executed.
      */
@@ -120,15 +120,15 @@ public class App {
      * If set to {@code true} the command prompt "> " will be printed.
      */
     private boolean allowPrompt;
-    
+
     /**
      * If set to {@code true}, we are reading from standard input.
      */
     private boolean readingFromStdin;
-    
+
     private App(String[] fileNameArray) {
         this.fileNameArray = fileNameArray;
-        
+
         commandMap.put("new",        newHandler);
         commandMap.put("del",        delHandler);
         commandMap.put("connect",    connectHandler);
@@ -136,10 +136,10 @@ public class App {
         commandMap.put("is",         isHandler);
         commandMap.put("echo",       echoHandler);
         commandMap.put("help",       helpHandler);
-        
+
         if (fileNameArray.length > 0) {
             String fileName = fileNameArray[0];
-            
+
             try {
                 scanner = new Scanner(new FileReader(new File(fileName)));
                 fileNameIndex++;
@@ -149,7 +149,7 @@ public class App {
                         "ERROR: File \"" + fileName + "\" not found.");
                 System.exit(1);
             }
-            
+
             allowPrompt = false;
         } else {
             scanner = new Scanner(System.in);
@@ -157,11 +157,11 @@ public class App {
             readingFromStdin = true;
         }
     }
-    
+
     private boolean promptAllowed() {
         return allowPrompt;
     }
-    
+
     private String read() {
         if (!scanner.hasNextLine()) {
             if (fileNameIndex == fileNameArray.length) {
@@ -182,10 +182,10 @@ public class App {
                 }
             }
         } 
-        
+
         return scanner.nextLine();
     }
-    
+
     /**
      * This method implements the actual REPL (Read, Evaluate, Print, Loop).
      */
@@ -206,7 +206,7 @@ public class App {
                 if (readingFromStdin) {
                     break;
                 }
-                
+
                 // Print no 'Bye!' whenever executing from files.
                 return;
             }
@@ -224,22 +224,18 @@ public class App {
                 commandMap.get(words[0]).handle(command, words);
                 continue;
             }
-            
+
             // Handle listing of states.
             if (words[0].equals("list")) {
                 handleList(true);
-                continue;
+            } else if (handleQuery(command)) {
+                // Once here, the command was recognized as a query. Do not go
+                // to 'handlePrintNode'.
+            } else {
+                // No match whatsoever, possibly the user wants to query a node 
+                // information.
+                handlePrintNode(words);
             }
-
-            if (handleQuery(command)) {
-                // Once here, the command was recognized as a query, so go 
-                // reiterate the REPL loop.
-                continue;
-            }
-
-            // No match whatsoever, possibly the user wants to query a node 
-            // information.
-            handlePrintNode(words);
         }
 
         System.out.println("Bye!");
