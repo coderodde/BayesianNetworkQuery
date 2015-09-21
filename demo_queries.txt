@@ -1,24 +1,3 @@
-# Create nodes.
-new Battery  0.9  # Comment
-new Radio    0.9  
-new Ignition 0.95
-new Fuel     0.95
-new Starts   0.99
-new Moves    0.99
-
-# Print a node.
-Fuel
-del Fuel
-echo Removed Fuel
-Fuel
-new Fuel 0.95
-
-# Create arcs.
-connect Battery  to Radio
-connect Battery  to Ignition
-connect Ignition to Starts
-connect Fuel     to Starts
-connect Starts   to Moves
 
 # Check a couple of arcs.
 echo Battery connected to Radio?
