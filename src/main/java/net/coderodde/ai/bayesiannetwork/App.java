@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import static net.coderodde.ai.bayesiannetwork.BayesNetworkClassifier.classify;
+import static net.coderodde.ai.bayesiannetwork.Utils.error;
 import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
+import static net.coderodde.ai.bayesiannetwork.Utils.isValidIdentifier;
 
 /**
  * This class implements a console program for working on Bayes networks.
@@ -19,6 +21,11 @@ import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
  */
 public class App {
 
+    /**
+     * Defines the token denoting a line comment.
+     */
+    public static final String COMMENT_BEGIN_TEXT = "#";
+    
     /**
      * This interface defines a command handler.
      */
@@ -34,10 +41,6 @@ public class App {
          * @param tokens  the whitespace delimited tokens of {@code command}.
          */
         void handle(String command, String[] tokens);
-    }
-
-    private static void error(String message) {
-        System.err.println("ERROR: " + message);
     }
 
     private final CommandHandler connectHandler = 
@@ -158,6 +161,10 @@ public class App {
             readingFromStdin = true;
         }
     }
+    
+    public void setModificationState(boolean stateModified) {
+        this.stateModified = stateModified;
+    }
 
     private boolean promptAllowed() {
         return allowPrompt;
@@ -232,30 +239,6 @@ public class App {
             // information.
             handlePrintNode(words);
         }
-    }
-
-    /**
-     * Checks that an identifier is a valid Java identifier.
-     * 
-     * @param identifier the identifier to check.
-     * @return {@code true} only if the input identifier is valid.
-     */
-    private static boolean isValidIdentifier(String identifier) {
-        if (identifier.isEmpty()) {
-            return false;
-        }
-
-        if (!Character.isJavaIdentifierStart(identifier.charAt(0))) {
-            return false;
-        }
-
-        for (int i = 1; i < identifier.length(); ++i) {
-            if (!Character.isJavaIdentifierPart(identifier.charAt(i))) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

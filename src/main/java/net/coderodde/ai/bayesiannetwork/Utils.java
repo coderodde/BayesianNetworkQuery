@@ -117,4 +117,63 @@ public class Utils {
         map.put(node, NodeColor.BLACK);
         return false;
     }
+    
+    public static void error(String message) {
+        System.err.println("ERROR: " + message);
+    }
+    
+    /**
+     * Checks that an identifier is a valid Java identifier.
+     * 
+     * @param identifier the identifier to check.
+     * @return {@code true} only if the input identifier is valid.
+     */
+    public static boolean isValidIdentifier(String identifier) {
+        if (identifier.isEmpty()) {
+            return false;
+        }
+
+        if (!Character.isJavaIdentifierStart(identifier.charAt(0))) {
+            return false;
+        }
+
+        for (int i = 1; i < identifier.length(); ++i) {
+            if (!Character.isJavaIdentifierPart(identifier.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
+    public static double parseProbability(String probabilityString) {
+        double probability;
+        
+        try {
+           probability = Double.parseDouble(probabilityString);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(
+                    "The input probability \"" + probabilityString + "\" is " +
+                    "not a floating point number.");
+        }
+        
+        if (Double.isNaN(probability)) {
+            throw new IllegalArgumentException(
+                    "The input probability is NaN.");
+        }
+        
+        if (probability < 0.0) {
+            throw new IllegalArgumentException(
+                    "The input probability \"" + probabilityString + "\" is " +
+                    "negative. Should be at least 0.");
+        }
+        
+        if (probability > 1.0) {
+            throw new IllegalArgumentException(
+                    "The input probability \"" + probabilityString + "\" is " + 
+                    "too large. Should be at most 1.");
+        }
+        
+        return probability;
+    }
 }
