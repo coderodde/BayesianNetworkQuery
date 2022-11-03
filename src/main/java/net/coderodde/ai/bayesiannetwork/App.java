@@ -257,6 +257,8 @@ public class App {
             commandMap.get(words[0]).handle(command, words);
         } else if (words[0].equals("list")) {
             handleList(true);
+        } else if (words[0].equals(COMMENT_BEGIN_TEXT)) {
+            // A comment. Do nothing.
         } else if (handleQuery(command)) {
             // Once here, the command was recognized as a query. Do not go
             // to 'handlePrintNode'.
@@ -314,6 +316,14 @@ public class App {
                 + tokens[1];
         
         File nextDirectory = new File(nextPathString);
+        
+        if (!nextDirectory.exists()) {
+            error("Directory " 
+                    + nextDirectory.getAbsolutePath() 
+                    + " does not exist.");
+            return;
+        }
+        
         Path normalizedNextDirectoryPath = 
                 Path.of(nextDirectory.getAbsolutePath()).normalize();
         
