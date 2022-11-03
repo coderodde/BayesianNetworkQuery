@@ -11,7 +11,7 @@ public abstract class AbstractExecutableCommand {
      */
     public abstract void execute(String command);
     
-    protected String[] splitToTokens(String text) {
+    protected static String[] splitToTokens(String text) {
         return text.split(SPLIT_REGEX);
     }
 }

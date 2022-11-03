@@ -72,7 +72,7 @@ final class SystemState {
         int i = 0;
 
         for (DirectedGraphNode node : nodeList) {
-            int fieldLength = node.toString().length();
+            int fieldLength = node.getName().length();
             String field = String.format("%" + fieldLength + "s",
                                          onSet.contains(node) ? "1" : "0");
             sb.append(field);

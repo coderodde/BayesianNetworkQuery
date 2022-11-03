@@ -94,7 +94,7 @@ public class ClassificationResult {
         int i = 0;
 
         for (DirectedGraphNode node : nodeList) {
-            sb.append(node);
+            sb.append(node.getName());
 
             if (i < nodeList.size() - 1) {
                 sb.append(", ");

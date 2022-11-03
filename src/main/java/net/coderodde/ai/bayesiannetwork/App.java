@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 import static net.coderodde.ai.bayesiannetwork.BayesNetworkClassifier.classify;
 import static net.coderodde.ai.bayesiannetwork.Utils.error;
 import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
@@ -77,11 +78,16 @@ public class App {
             (String command, String[] tokens) -> {
         handleNew(tokens);
     };
+    
+    private final CommandHandler printNodesHandler = 
+            (String command, String[] tokens) -> {
+        handlePrintNodes();
+    };
 
     /**
      * This map maps each node name to its representation.
      */
-    private final Map<String, DirectedGraphNode> nodeMap = new HashMap<>();
+    private final Map<String, DirectedGraphNode> nodeMap = new TreeMap<>();
 
     /**
      * Maps some command names to their respective handlers.
@@ -140,6 +146,7 @@ public class App {
         commandMap.put("is",         isHandler);
         commandMap.put("echo",       echoHandler);
         commandMap.put("help",       helpHandler);
+        commandMap.put("print",      printNodesHandler);
 
         if (fileNameArray.length > 0) {
             String fileName = fileNameArray[0];
@@ -211,11 +218,7 @@ public class App {
             }
 
             if (command.equals("quit")) {
-                if (readingFromStdin) {
-                    System.out.println("Bye!");
-                }
-
-                // Print no 'Bye!' whenever executing from files.
+                System.out.println("Bye!");
                 return;
             }
 
@@ -240,7 +243,36 @@ public class App {
             handlePrintNode(words);
         }
     }
+    
+    private int computeMaximumNodeNameLength() {
+        int maximumLength = Integer.MIN_VALUE;
+        
+        for (String nodeName : nodeMap.keySet()) {
+            maximumLength = Math.max(maximumLength, nodeName.length());
+        }
+        
+        return maximumLength;
+    }
 
+    private void handlePrintNodes() {
+        if (nodeMap.isEmpty()) {
+            System.out.println(">>> No nodes yet.");
+            return;
+        }
+        
+        int maximumNodeNameLength = computeMaximumNodeNameLength();
+        String format = "%" + maximumNodeNameLength + "s %f";
+        
+        for (Map.Entry<String, DirectedGraphNode> entry : nodeMap.entrySet()) {
+            System.out.println(
+                    String.format(
+                            format, 
+                            entry.getValue().getName(),
+                            entry.getValue().getProbability()
+                            ));
+        }
+    }
+    
     /**
      * Handles the command starting with "new".
      * 
@@ -248,7 +280,7 @@ public class App {
      */
     private void handleNew(String[] words) {
         if (words.length < 3) {
-            error("Cannot parse 'new' command.");
+            error("Cannot parse 'newpr' command.");
             return;
         }
 
@@ -298,7 +330,7 @@ public class App {
             node = nodeMap.get(nodeName);
             probabilityMap.put(node, probability);
         } else {
-            node = new DirectedGraphNode(nodeName);
+            node = new DirectedGraphNode(nodeName, probability);
             nodeMap.put(nodeName, node);
         }
 
@@ -656,7 +688,7 @@ public class App {
 
         // Get parent node names.
         for (DirectedGraphNode parent : node.parents()) {
-            sb.append(parent);
+            sb.append(parent.getName());
 
             if (i++ < node.parents().size() - 1) {
                 sb.append(", ");
@@ -670,7 +702,7 @@ public class App {
 
         // Get child node names.
         for (DirectedGraphNode child : node.children()) {
-            sb.append(child);
+            sb.append(child.getName());
 
             if (i++ < node.children().size() - 1) {
                 sb.append(", ");
@@ -713,6 +745,7 @@ public class App {
             System.out.println("  help #");
             System.out.println("  help <nodename>");
             System.out.println("  help p");
+            System.out.println("  help print");
             System.out.println("  help quit");
             return;
         }
@@ -797,6 +830,11 @@ public class App {
                 break;
             }
 
+            case "print": {
+                System.out.println("Prints information of all the nodes.");
+                break;
+            }
+            
             case "quit": {
                 System.out.println("\"quit\"");
                 System.out.println("Quits the program.");

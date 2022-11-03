@@ -63,7 +63,7 @@ extends AbstractExecutableCommand {
         if (nodeMap.containsKey(nodeName)) {
             node = nodeMap.get(nodeName);
         } else {
-            node = new DirectedGraphNode(nodeName);
+            node = new DirectedGraphNode(nodeName, probability);
             nodeMap.put(nodeName, node);
         }
         
