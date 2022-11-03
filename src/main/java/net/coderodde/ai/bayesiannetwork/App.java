@@ -3,12 +3,17 @@ package net.coderodde.ai.bayesiannetwork;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import static net.coderodde.ai.bayesiannetwork.BayesNetworkClassifier.classify;
 import static net.coderodde.ai.bayesiannetwork.Utils.error;
 import static net.coderodde.ai.bayesiannetwork.Utils.findEntireGraph;
@@ -83,6 +88,21 @@ public class App {
             (String command, String[] tokens) -> {
         handlePrintNodes();
     };
+    
+    private final CommandHandler listFilesHandler = 
+            (String command, String[] tokens) -> {
+        handleListFiles();
+    };
+    
+    private final CommandHandler changeDirectoryHandler = 
+            (String command, String[] tokens) -> {
+        handleChangeDirectory(tokens);
+    };
+    
+    private final CommandHandler loadFileHandler = 
+            (String command, String[] tokens) -> {
+        handleLoadFile(tokens);
+    };
 
     /**
      * This map maps each node name to its representation.
@@ -147,6 +167,9 @@ public class App {
         commandMap.put("echo",       echoHandler);
         commandMap.put("help",       helpHandler);
         commandMap.put("print",      printNodesHandler);
+        commandMap.put("ls",         listFilesHandler);
+        commandMap.put("cd",         changeDirectoryHandler);
+        commandMap.put("load",       loadFileHandler);
 
         if (fileNameArray.length > 0) {
             String fileName = fileNameArray[0];
@@ -210,7 +233,7 @@ public class App {
                 System.out.print("> ");
             }
 
-            String command = read();
+                String command = read();
 
             if (command.isEmpty() || command.startsWith("#")) {
                 // No text in the command or a line comment.
@@ -271,6 +294,33 @@ public class App {
                             entry.getValue().getProbability()
                             ));
         }
+    }
+    
+    private void handleListFiles() {
+        File currentDirectory = new File(System.getProperty("user.dir"));
+        List<String> fileNames = 
+                Stream.of(
+                        currentDirectory.list())
+                        .collect(Collectors.toList());
+        
+        fileNames.forEach(System.out::println);
+    }
+    
+    private void handleChangeDirectory(String[] tokens) {
+        File currentDirectory = new File(System.getProperty("user.dir"));
+        String nextPathString = 
+                currentDirectory.getAbsolutePath() 
+                + File.separator
+                + tokens[1];
+        
+        File nextDirectory = new File(nextPathString);
+        Path normalizedNextDirectoryPath = 
+                Path.of(nextDirectory.getAbsolutePath()).normalize();
+        
+        nextPathString = normalizedNextDirectoryPath.toFile().getAbsolutePath();
+        
+        System.setProperty("user.dir", nextPathString);
+        System.out.println("Switched to \"" + nextPathString + "\"");
     }
     
     /**
@@ -741,6 +791,9 @@ public class App {
             System.out.println("  help is connected");
             System.out.println("  help disconnect");
             System.out.println("  help list");
+            System.out.println("  help ls");
+            System.out.println("  help cd <PATH>");
+            System.out.println("  help load <FILE_NAME>");
             System.out.println("  help echo");
             System.out.println("  help #");
             System.out.println("  help <nodename>");
@@ -835,6 +888,24 @@ public class App {
                 break;
             }
             
+            case "ls": {
+                System.out.println(
+                        "Lists the contents of the current working directory.");
+                break;
+            }
+            
+            case "cd": {
+                System.out.println("cd <DIRECTORY>");
+                System.out.println(
+                        "Changes the current working directory to DIRECTORY.");
+                
+                System.out.println("EXAMPLE 1: cd ../../abc");
+                System.out.println("EXAMPLE 2: def/xyz");
+                System.out.println("EXAMPLE 3: /opt/abc");
+                System.out.println("EXAMPLE 4: C:\\Users\\Bob");
+                break;
+            }
+            
             case "quit": {
                 System.out.println("\"quit\"");
                 System.out.println("Quits the program.");
@@ -863,6 +934,28 @@ public class App {
         }
 
         return false;
+    }
+    
+    private void handleLoadFile(String[] tokens) {
+        if (tokens.length < 2) {
+            error("No file specified.");
+            return;
+        } else if (tokens.length > 2 && !tokens[2].equals(COMMENT_BEGIN_TEXT)) {
+            error("Too many tokens.");
+            return;
+        }
+        
+        String path = tokens[1];
+        
+        try {
+            List<String> rows = Files.readAllLines(new File(path).toPath());
+            
+            for (String row : rows) {
+                handleCommand(row);
+            }
+        } catch (IOException ex) {
+            error("Cannot access file \"" + path + "\".");
+        }
     }
 
     public static void main(String[] args) {
