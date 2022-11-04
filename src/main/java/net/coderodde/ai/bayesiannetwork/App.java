@@ -969,6 +969,7 @@ public class App {
     }
 
     public static void main(String[] args) {
+        
         if (hasHelpFlag(args)) {
             System.out.println(
                     "java -jar <PROGRAM.jar> [-h] [FILE1 FILE2 ... FILEN]");

@@ -1,5 +1,7 @@
 package net.coderodde.ai.bayesiannetwork;
 
+import java.util.Arrays;
+
 public abstract class AbstractExecutableCommand {
 
     private static final String SPLIT_REGEX = "\\s+";
@@ -12,6 +14,16 @@ public abstract class AbstractExecutableCommand {
     public abstract void execute(String command);
     
     protected static String[] splitToTokens(String text) {
-        return text.split(SPLIT_REGEX);
+        String[] tokens = text.split(SPLIT_REGEX);
+        
+        if (tokens.length == 0) {
+            System.out.println("tokens.length == 0");
+        }
+        
+        if (tokens[0].isEmpty()) {
+            return Arrays.copyOfRange(tokens, 1, tokens.length);
+        }
+        
+        return tokens;
     }
 }
